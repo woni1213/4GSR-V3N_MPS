@@ -6,6 +6,7 @@ MPS INTerLock Module
 개발 4팀 전경원 차장
 
 24.07.04 :	최초 생성
+24.07.19 : 	OSC Interlock 추가
 
 이성진 차장의 퇴사로 인하여 MPS PL 프로그래밍
 
@@ -50,8 +51,15 @@ MPS INTerLock Module
  10	: 외부 인터락 입력 3 Bypass
  11	: 외부 인터락 입력 4 Bypass
 
-3. 검토 사항
- - OSC, REG는 SBC 타입이고 나머지는 TCC 타입임
+3. Oscillation Interlock
+ - 출력이 발진될 때 동작
+ - 2의 보수로 구성된 ADC Data를 ADC IP에서 16번 더한 값을 기준으로 동작함
+ - 따라서 ADC Data를 Offset Binary를 취하여 계산
+ - 계산 방법은 MSB를 반전시킴 (27번째 Bit. 16번 더함으로 4개의 Bit가 << 됨. 따라서 27Bit임)
+
+5. 검토 사항
+ - OSC, REG는 Offset Binary 타입이고 나머지는 TCC 타입임
+ - REG 관련 time, diff 값은 비트 수 조절해야함
 
 */
 
@@ -79,7 +87,7 @@ module INTL
 
 	// Reset
 	input i_sys_rst_flag,
-	input i_intl_rst,
+	input i_intl_rst,							// OSC, REG Interlock Reset
 
 	// ADC
 	input [15:0] i_dc_adc_data,
@@ -93,25 +101,47 @@ module INTL
 	input [15:0] i_intl_UV,
 	input i_mps_polarity,
 
-	// Current Oscillation
+	// Oscillation (OSC)
 	input i_intl_OSC_bypass,
 	input [31:0] i_c_intl_OSC_adc_threshold,
 	input [9:0]	i_c_intl_OSC_count_threshold,
+	input [31:0] i_v_intl_OSC_adc_threshold,
+	input [9:0]	i_v_intl_OSC_count_threshold,
 	input [19:0] i_intl_OSC_period,				// Count Cycle Period. Max 1,048,576 = 5,242,880 ns
 	input [9:0] i_intl_OSC_cycle_count,			// Count Cycle Periode * i_intl_OSC_cycle_count = Total Cycle. Max 1024
 	
+	// Regulation (REG)
+	input i_intl_REG_mode,						// Output Mode (0 : C.C or 1 : C.V)
+	input i_intl_REG_bypass,
+	input i_c_intl_REG_sp_flag,					// Output Set Flag (REG Start)
+	input i_v_intl_REG_sp_flag,
+	input [31:0] i_c_intl_REG_sp,				// Output Set Value
+	input [31:0] i_c_intl_REG_diff,				// Regulation Differential Threashold
+	input [31:0] i_c_intl_REG_delay,			// Regulation Delay Time
+	input [31:0] i_v_intl_REG_sp,
+	input [31:0] i_v_intl_REG_diff,
+	input [31:0] i_v_intl_REG_delay,
+
 	// Interlock State
 	output reg [15:0] o_intl_state
 );
 
-	parameter IDLE		= 0;
+	parameter OSC_IDLE	= 0;
 	parameter OSC_RUN	= 1;
 	parameter OSC_COUNT	= 2;
 	parameter OSC_RESET	= 3;
 
+	parameter REG_IDLE	= 0;
+	parameter REG_DELAY	= 1;
+	parameter REG_RUN	= 2;
+	parameter REG_DONE	= 3;
+
 	// FSM
-	reg [1:0] state;
-	reg [1:0] n_state;
+	reg [1:0] OSC_state;
+	reg [1:0] OSC_n_state;
+
+	reg [1:0] REG_state;
+	reg [1:0] REG_n_state;
 
 	// Interlock Flag
 	wire intl_UV;
@@ -119,12 +149,15 @@ module INTL
 	wire intl_OC;
 	reg c_intl_OSC;
 	reg v_intl_OSC;
+	reg c_intl_REG;
+	reg v_intl_REG;
 
 	// Counter
 	reg [19:0] intl_OSC_period_cnt;
 	reg [9:0] intl_OSC_cycle_cnt;
+	reg [31:0] intl_REG_cnt;
 
-	// Oscillation
+	// OSC
 	wire [31:0] c_adc_sbc_raw_data;
 	reg [31:0] c_intl_OSC_adc_max;
 	reg [31:0] c_intl_OSC_adc_min;
@@ -135,61 +168,116 @@ module INTL
 	reg [31:0] v_intl_OSC_adc_min;
 	reg [9:0] v_intl_OSC_cnt;
 
-	// FSM Control
+	// REG
+
+	// OSC FSM Control
 	always @(posedge i_clk or negedge i_rst)
     begin
         if (~i_rst)
-            state <= IDLE;
+            OSC_state <= OSC_IDLE;
 
         else 
-            state <= n_state;
+            OSC_state <= OSC_n_state;
     end
 
-	// FSM
+	// REG FSM Control
+	always @(posedge i_clk or negedge i_rst)
+    begin
+        if (~i_rst)
+            REG_state <= REG_IDLE;
+
+        else 
+            REG_state <= REG_n_state;
+    end
+
+	// OSC FSM
 	always @(*)
     begin
-        case (state)
-            IDLE :
+        case (OSC_state)
+            OSC_IDLE :
             begin
                 if (~c_intl_OSC && ~v_intl_OSC)
-                    n_state <= OSC_RUN;
+                    OSC_n_state <= OSC_RUN;
 
                 else
-                    n_state <= IDLE;
+                    OSC_n_state <= OSC_IDLE;
             end
 
 			OSC_RUN :
             begin
                 if (intl_OSC_period_cnt == i_intl_OSC_period)
-                    n_state <= OSC_COUNT;
+                    OSC_n_state <= OSC_COUNT;
 
 				else if (c_intl_OSC || v_intl_OSC)
-					n_state <= IDLE;
+					OSC_n_state <= OSC_IDLE;
 
                 else
-                    n_state <= OSC_RUN;
+                    OSC_n_state <= OSC_RUN;
             end
 
 			OSC_COUNT :
-				n_state <= OSC_RESET;
+				OSC_n_state <= OSC_RESET;
             
 			OSC_RESET:
 			begin
-                if (intl_OSC_cycle_cnt == i_intl_OSC_cycle_count)
-                    n_state <= IDLE;
+                if (intl_OSC_cycle_cnt == i_intl_OSC_cycle_count + 1)		// OSC_COUNT에서 1을 미리 더하기 때문에 + 1을 해줌
+                    OSC_n_state <= OSC_IDLE;
 
 				else if (c_intl_OSC || v_intl_OSC)
-					n_state <= IDLE;
+					OSC_n_state <= OSC_IDLE;
 
 				else
-					n_state <= OSC_RUN;
+					OSC_n_state <= OSC_RUN;
             end
-                
 		endcase
 	end
 
-	/////////////////////////////////////////////////////////////////////////////
-	// OSC Control //
+	// REG FSM
+	always @(*)
+    begin
+        case (REG_state)
+            REG_IDLE :
+            begin
+                if ((i_c_intl_REG_sp_flag || i_v_intl_REG_sp_flag) && ~(c_intl_REG || v_intl_REG))
+                    REG_n_state <= REG_DELAY;
+
+                else
+                    REG_n_state <= REG_IDLE;
+            end
+
+			REG_DELAY :
+            begin
+				if (i_intl_REG_mode)
+					if (intl_REG_cnt == i_v_intl_REG_delay)
+						REG_n_state <= REG_RUN;
+
+					else
+						REG_n_state <= REG_DELAY;
+				
+				else
+					if (intl_REG_cnt == i_c_intl_REG_delay)
+						REG_n_state <= REG_RUN;
+
+					else
+						REG_n_state <= REG_DELAY;
+            end
+
+			REG_RUN :
+                REG_n_state <= REG_DONE;
+
+			REG_DONE :
+            begin
+                if (~i_c_intl_REG_sp_flag && ~i_v_intl_REG_sp_flag)
+                    REG_n_state <= REG_IDLE;
+
+                else
+                    REG_n_state <= REG_DONE;
+            end
+		endcase
+	end
+
+
+	/***** Counter Control *****/
 	
 	// OSC Period Counter
 	always @(posedge i_clk or negedge i_rst) 
@@ -197,7 +285,7 @@ module INTL
     	if (~i_rst) 
         	intl_OSC_period_cnt <= 0;
 
-		else if (state == OSC_RUN)
+		else if (OSC_state == OSC_RUN)
 			intl_OSC_period_cnt <= intl_OSC_period_cnt + 1;
 
 		else
@@ -207,28 +295,38 @@ module INTL
 	// OSC Cycle Counter
 	always @(posedge i_clk or negedge i_rst) 
 	begin
-    	if (~i_rst || (state == IDLE)) 
+    	if (~i_rst || (OSC_state == OSC_IDLE)) 
         	intl_OSC_cycle_cnt <= 0;
 
-		else if (state == OSC_COUNT)
+		else if (OSC_state == OSC_COUNT)
 			intl_OSC_cycle_cnt <= intl_OSC_cycle_cnt + 1;
 
 		else
 			intl_OSC_cycle_cnt <= intl_OSC_cycle_cnt;
 	end
 
-	/////////////////////////////////////////////////////////////////////////////
+	// REG Delay Counter
+	always @(posedge i_clk or negedge i_rst) 
+	begin
+    	if (~i_rst) 
+        	intl_REG_cnt <= 0;
 
-	/////////////////////////////////////////////////////////////////////////////
-	// OSC Current //
+		else if (REG_state == REG_DELAY)
+			intl_REG_cnt <= intl_REG_cnt + 1;
+
+		else
+			intl_REG_cnt <= 0;
+	end
+
+	/***** Current OSC  *****/
 
 	// OSC ADC Data Min Calc
 	always @(posedge i_clk or negedge i_rst) 
 	begin
-    	if (~i_rst || (state == IDLE) || (state == OSC_RESET))
+    	if (~i_rst || (OSC_state == OSC_IDLE) || (OSC_state == OSC_RESET))
 			c_intl_OSC_adc_min <= 0;
 
-		else if (state == OSC_RUN)
+		else if (OSC_state == OSC_RUN)
 		begin
 			if (c_intl_OSC_adc_min < c_adc_sbc_raw_data)
 				c_intl_OSC_adc_min <= c_adc_sbc_raw_data;
@@ -244,10 +342,10 @@ module INTL
 	// OSC ADC Data Max Calc
 	always @(posedge i_clk or negedge i_rst) 
 	begin
-    	if (~i_rst || (state == IDLE) || (state == OSC_RESET))
+    	if (~i_rst || (OSC_state == OSC_IDLE) || (OSC_state == OSC_RESET))
 			c_intl_OSC_adc_max <= 0;
 
-		else if (state == OSC_RUN)
+		else if (OSC_state == OSC_RUN)
 		begin
 			if (c_intl_OSC_adc_max < c_adc_sbc_raw_data)
 				c_intl_OSC_adc_max <= c_adc_sbc_raw_data;
@@ -263,10 +361,10 @@ module INTL
 	// OSC ADC Data ABS, Interlock Count
 	always @(posedge i_clk or negedge i_rst) 
 	begin
-    	if (~i_rst || (state == IDLE))
+    	if (~i_rst || (OSC_state == OSC_IDLE))
 			c_intl_OSC_cnt <= 0;
 
-		else if (state == OSC_COUNT)
+		else if (OSC_state == OSC_COUNT)
 		begin
 			if ((c_intl_OSC_adc_max - c_intl_OSC_adc_min) >= i_c_intl_OSC_adc_threshold)
 				c_intl_OSC_cnt <= c_intl_OSC_cnt + 1;
@@ -288,14 +386,142 @@ module INTL
     	if (~i_rst || i_intl_rst)
 			c_intl_OSC <= 0;
 
-		else if (c_intl_OSC_cnt >= i_intl_OSC_cycle_count)
+		else if (c_intl_OSC_cnt >= i_c_intl_OSC_count_threshold)
 			c_intl_OSC <= 1;
 
 		else
 			c_intl_OSC <= c_intl_OSC;
 	end
 
-	/////////////////////////////////////////////////////////////////////////////
+	/***** Voltage OSC  *****/
+
+	// OSC ADC Data Min Calc
+	always @(posedge i_clk or negedge i_rst) 
+	begin
+    	if (~i_rst || (OSC_state == OSC_IDLE) || (OSC_state == OSC_RESET))
+			v_intl_OSC_adc_min <= 0;
+
+		else if (OSC_state == OSC_RUN)
+		begin
+			if (v_intl_OSC_adc_min < v_adc_sbc_raw_data)
+				v_intl_OSC_adc_min <= v_adc_sbc_raw_data;
+			
+			else
+				v_intl_OSC_adc_min <= v_intl_OSC_adc_min;
+		end
+
+		else
+			v_intl_OSC_adc_min <= v_intl_OSC_adc_min;
+	end
+
+	// OSC ADC Data Max Calc
+	always @(posedge i_clk or negedge i_rst) 
+	begin
+    	if (~i_rst || (OSC_state == OSC_IDLE) || (OSC_state == OSC_RESET))
+			v_intl_OSC_adc_max <= 0;
+
+		else if (OSC_state == OSC_RUN)
+		begin
+			if (v_intl_OSC_adc_max < v_adc_sbc_raw_data)
+				v_intl_OSC_adc_max <= v_adc_sbc_raw_data;
+			
+			else
+				v_intl_OSC_adc_max <= v_intl_OSC_adc_max;
+		end
+
+		else
+			v_intl_OSC_adc_max <= v_intl_OSC_adc_max;
+	end
+
+	// OSC ADC Data ABS, Interlock Count
+	always @(posedge i_clk or negedge i_rst) 
+	begin
+    	if (~i_rst || (OSC_state == OSC_IDLE))
+			v_intl_OSC_cnt <= 0;
+
+		else if (OSC_state == OSC_COUNT)
+		begin
+			if ((v_intl_OSC_adc_max - v_intl_OSC_adc_min) >= i_v_intl_OSC_adc_threshold)
+				v_intl_OSC_cnt <= v_intl_OSC_cnt + 1;
+			
+			else if ((v_intl_OSC_adc_max - v_intl_OSC_adc_min) < i_v_intl_OSC_adc_threshold)
+			begin
+				if (c_intl_OSC_cnt == 0)
+					v_intl_OSC_cnt <= v_intl_OSC_cnt;
+
+				else
+					v_intl_OSC_cnt <= v_intl_OSC_cnt - 1;
+			end
+		end
+	end
+
+	// OSC Current Interlock
+	always @(posedge i_clk or negedge i_rst) 
+	begin
+    	if (~i_rst || i_intl_rst)
+			v_intl_OSC <= 0;
+
+		else if (c_intl_OSC_cnt >= i_v_intl_OSC_count_threshold)
+			v_intl_OSC <= 1;
+
+		else
+			v_intl_OSC <= c_intl_OSC;
+	end
+
+	/***** REG *****/
+
+	// REG Interlock
+	always @(posedge i_clk or negedge i_rst) 
+	begin
+    	if (~i_rst || i_intl_rst)
+		begin
+			v_intl_REG <= 0;
+			c_intl_REG <= 0;
+		end
+
+		else if (REG_state == REG_RUN)
+		begin
+			if (i_intl_REG_mode)
+			begin
+				if ((i_v_intl_REG_sp - v_adc_sbc_raw_data) > i_v_intl_REG_diff)
+				begin
+					v_intl_REG <= 1;
+					c_intl_REG <= c_intl_REG;
+				end
+					
+				else
+				begin
+					v_intl_REG <= v_intl_REG;
+					c_intl_REG <= c_intl_REG;
+				end
+			end
+
+			else
+			begin
+				if ((i_c_intl_REG_sp - c_adc_sbc_raw_data) > i_c_intl_REG_diff)
+				begin
+					v_intl_REG <= v_intl_REG;
+					c_intl_REG <= 1;
+				end
+					
+				else
+				begin
+					v_intl_REG <= v_intl_REG;
+					c_intl_REG <= c_intl_REG;
+				end
+					
+			end
+		end
+
+		else
+		begin
+			v_intl_REG <= v_intl_REG;
+			c_intl_REG <= c_intl_REG;
+		end
+	end
+
+
+	/***** Interlock State *****/
 
 	always @(posedge i_clk or negedge i_rst) 
 	begin
@@ -328,5 +554,6 @@ module INTL
 	assign intl_OC = 	((i_intl_OC_p < i_c_adc_raw_data) || 
 						((i_mps_polarity) && (i_c_adc_raw_data < i_intl_OC_n))) ? 1 : 0;
 
-	assign c_adc_sbc_raw_data = {~i_c_adc_raw_data[31], i_c_adc_raw_data[30:0]};
+	assign c_adc_sbc_raw_data = {~i_c_adc_raw_data[27], i_c_adc_raw_data[26:0]};
+	assign v_adc_sbc_raw_data = {~i_v_adc_raw_data[27], i_v_adc_raw_data[26:0]};
 endmodule
