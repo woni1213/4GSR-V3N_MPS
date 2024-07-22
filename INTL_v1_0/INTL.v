@@ -7,6 +7,7 @@ MPS INTerLock Module
 
 24.07.04 :	최초 생성
 24.07.19 : 	OSC Interlock 추가
+24.07.22 :	REG Interlock 추가
 
 이성진 차장의 퇴사로 인하여 MPS PL 프로그래밍
 
@@ -51,11 +52,21 @@ MPS INTerLock Module
  10	: 외부 인터락 입력 3 Bypass
  11	: 외부 인터락 입력 4 Bypass
 
+ 12	: OSC 전류 인터락
+ 13	: OSC 전압 인터락
+ 14	: REG 전류 인터락
+ 15	: REG 전류 인터락
+
 3. Oscillation Interlock
  - 출력이 발진될 때 동작
  - 2의 보수로 구성된 ADC Data를 ADC IP에서 16번 더한 값을 기준으로 동작함
  - 따라서 ADC Data를 Offset Binary를 취하여 계산
  - 계산 방법은 MSB를 반전시킴 (27번째 Bit. 16번 더함으로 4개의 Bit가 << 됨. 따라서 27Bit임)
+
+4. Regulation Interlock
+ - 출력 값을 입력한 후 동작
+ - 출력 값 변경 후 일정시간 지난 뒤에 설정한 출력 값까지 실제 출력 값에 맞지 않는 경우 발생
+ - 출력의 모드에 따라서 동작함 (C.C or C.V)
 
 5. 검토 사항
  - OSC, REG는 Offset Binary 타입이고 나머지는 TCC 타입임
@@ -108,7 +119,7 @@ module INTL
 	input [31:0] i_v_intl_OSC_adc_threshold,
 	input [9:0]	i_v_intl_OSC_count_threshold,
 	input [19:0] i_intl_OSC_period,				// Count Cycle Period. Max 1,048,576 = 5,242,880 ns
-	input [9:0] i_intl_OSC_cycle_count,			// Count Cycle Periode * i_intl_OSC_cycle_count = Total Cycle. Max 1024
+	input [9:0] i_intl_OSC_cycle_count,			// Count Cycle Periode * i_intl_OSC_cycle_count = Total Period. Max 1024
 	
 	// Regulation (REG)
 	input i_intl_REG_mode,						// Output Mode (0 : C.C or 1 : C.V)
@@ -169,6 +180,8 @@ module INTL
 	reg [9:0] v_intl_OSC_cnt;
 
 	// REG
+	wire [31:0] c_intl_REG_abs;
+	wire [31:0] v_intl_REG_abs;
 
 	// OSC FSM Control
 	always @(posedge i_clk or negedge i_rst)
@@ -196,7 +209,7 @@ module INTL
         case (OSC_state)
             OSC_IDLE :
             begin
-                if (~c_intl_OSC && ~v_intl_OSC)
+                if ((~c_intl_OSC && ~v_intl_OSC) && ~i_intl_OSC_bypass)
                     OSC_n_state <= OSC_RUN;
 
                 else
@@ -238,7 +251,7 @@ module INTL
         case (REG_state)
             REG_IDLE :
             begin
-                if ((i_c_intl_REG_sp_flag || i_v_intl_REG_sp_flag) && ~(c_intl_REG || v_intl_REG))
+                if ((i_c_intl_REG_sp_flag || i_v_intl_REG_sp_flag) && ~(c_intl_REG || v_intl_REG) && ~i_intl_REG_bypass)
                     REG_n_state <= REG_DELAY;
 
                 else
@@ -446,7 +459,7 @@ module INTL
 			
 			else if ((v_intl_OSC_adc_max - v_intl_OSC_adc_min) < i_v_intl_OSC_adc_threshold)
 			begin
-				if (c_intl_OSC_cnt == 0)
+				if (v_intl_OSC_cnt == 0)
 					v_intl_OSC_cnt <= v_intl_OSC_cnt;
 
 				else
@@ -461,7 +474,7 @@ module INTL
     	if (~i_rst || i_intl_rst)
 			v_intl_OSC <= 0;
 
-		else if (c_intl_OSC_cnt >= i_v_intl_OSC_count_threshold)
+		else if (v_intl_OSC_cnt >= i_v_intl_OSC_count_threshold)
 			v_intl_OSC <= 1;
 
 		else
@@ -483,7 +496,7 @@ module INTL
 		begin
 			if (i_intl_REG_mode)
 			begin
-				if ((i_v_intl_REG_sp - v_adc_sbc_raw_data) > i_v_intl_REG_diff)
+				if (v_intl_REG_abs > i_v_intl_REG_diff)
 				begin
 					v_intl_REG <= 1;
 					c_intl_REG <= c_intl_REG;
@@ -498,7 +511,7 @@ module INTL
 
 			else
 			begin
-				if ((i_c_intl_REG_sp - c_adc_sbc_raw_data) > i_c_intl_REG_diff)
+				if (c_intl_REG_abs > i_c_intl_REG_diff)
 				begin
 					v_intl_REG <= v_intl_REG;
 					c_intl_REG <= 1;
@@ -544,6 +557,11 @@ module INTL
 			o_intl_state[9] <= intl_OV;
 			o_intl_state[10] <= intl_OC;
 
+			o_intl_state[11] <= c_intl_OSC;
+			o_intl_state[12] <= v_intl_OSC;
+			o_intl_state[13] <= c_intl_REG;
+			o_intl_state[14] <= v_intl_REG;
+
 			o_intl_state[15] <= ~i_sys_rst_flag;
     	end
 	end
@@ -556,4 +574,9 @@ module INTL
 
 	assign c_adc_sbc_raw_data = {~i_c_adc_raw_data[27], i_c_adc_raw_data[26:0]};
 	assign v_adc_sbc_raw_data = {~i_v_adc_raw_data[27], i_v_adc_raw_data[26:0]};
+
+	assign c_intl_REG_abs = (i_c_intl_REG_sp > c_adc_sbc_raw_data) ? 
+							i_c_intl_REG_sp - c_adc_sbc_raw_data : c_adc_sbc_raw_data - i_c_intl_REG_sp;
+	assign v_intl_REG_abs = (i_v_intl_REG_sp > v_adc_sbc_raw_data) ? 
+							i_v_intl_REG_sp - v_adc_sbc_raw_data : v_adc_sbc_raw_data - i_v_intl_REG_sp;
 endmodule
