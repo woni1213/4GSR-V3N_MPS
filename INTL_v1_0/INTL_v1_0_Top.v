@@ -12,12 +12,20 @@ MPS INTerLock Module
 0. 기타
  - 
 
+1. Initialize
+ - 아닐 가능성 있음
+
+ - o_en_dsp_boot : 1
+ - o_sys_rst : 0
+ - o_en_dsp_buf_ctrl : 1
+ - o_eeprom_rst : 1
+
 */
 
 module INTL_v1_0_Top #
 (
 	parameter integer C_S_AXI_DATA_WIDTH = 32,
-	parameter integer C_S_AXI_ADDR_WIDTH = 6
+	parameter integer C_S_AXI_ADDR_WIDTH = 7
 )
 (
 	// External Interlock Input
@@ -39,7 +47,7 @@ module INTL_v1_0_Top #
     input i_intl_OH,			// 전력보드 Over Heat (전력보드 TP202, Not Used) i_MOHSS
 
 	// Reset
-    input i_sys_rst_flag,			// Reset (RS232 DTR) i_nMONXRST
+    input i_sys_rst_flag,		// Reset (RS232 DTR) i_nMONXRST
 	output o_intl_OC_rst,		// 제어보드 Over Current (OC) RST o_nMCL0CF
 	output o_intl_POC_rst,		// 전력보드 Over Current (POC) RST o_MINOCMR
 
@@ -105,6 +113,27 @@ module INTL_v1_0_Top #
 	wire [15:0] intl_UV;			// Under Volt (DC-Link)
 	wire mps_polarity;				// Unipolar / Bipolar
 
+	wire intl_rst;
+
+	wire intl_OSC_bypass;
+	wire [31:0] c_intl_OSC_adc_threshold;
+	wire [9:0] c_intl_OSC_count_threshold;
+	wire [31:0] v_intl_OSC_adc_threshold;
+	wire [9:0] v_intl_OSC_count_threshold;
+	wire [19:0] intl_OSC_period;
+	wire [9:0] intl_OSC_cycle_count;
+
+	wire intl_REG_mode;
+	wire intl_REG_bypass;
+	wire c_intl_REG_sp_flag;
+	wire v_intl_REG_sp_flag;
+	wire [31:0] c_intl_REG_sp;
+	wire [31:0] c_intl_REG_diff;
+	wire [31:0] c_intl_REG_delay;
+	wire [31:0] v_intl_REG_sp;
+	wire [31:0] v_intl_REG_diff;
+	wire [31:0] v_intl_REG_delay;
+
 	AXI4_Lite_S02 #
 	(
 		.C_S_AXI_DATA_WIDTH(C_S_AXI_DATA_WIDTH),
@@ -140,11 +169,34 @@ module INTL_v1_0_Top #
 		.o_SP1005(o_SP1005),
 		.o_SP1006(o_SP1006),
 
+		.o_intl_rst(intl_rst),
+
+		.o_intl_OSC_bypass(intl_OSC_bypass),
+		.o_c_intl_OSC_adc_threshold(c_intl_OSC_adc_threshold),
+		.o_c_intl_OSC_count_threshold(c_intl_OSC_count_threshold),
+		.o_v_intl_OSC_adc_threshold(v_intl_OSC_adc_threshold),
+		.o_v_intl_OSC_count_threshold(v_intl_OSC_count_threshold),
+		.o_intl_OSC_period(intl_OSC_period),
+		.o_intl_OSC_cycle_count(intl_OSC_cycle_count),
+
+		.o_intl_REG_mode(intl_REG_mode),
+		.o_intl_REG_bypass(intl_REG_bypass),
+		.o_c_intl_REG_sp_flag(c_intl_REG_sp_flag),
+		.o_v_intl_REG_sp_flag(v_intl_REG_sp_flag),
+		.o_c_intl_REG_sp(c_intl_REG_sp),
+		.o_c_intl_REG_diff(c_intl_REG_diff),
+		.o_c_intl_REG_delay(c_intl_REG_delay),
+		.o_v_intl_REG_sp(v_intl_REG_sp),
+		.o_v_intl_REG_diff(v_intl_REG_diff),
+		.o_v_intl_REG_delay(v_intl_REG_delay),
+
 		// Read (PL - PS)
 		.i_intl_state(intl_state),
 		.i_ext_trg(i_ext_trg),
 		.i_SP1010(i_SP1010),
 		.i_SP1011(i_SP1011),
+
+
 
 		.S_AXI_ACLK(s00_axi_aclk),
 		.S_AXI_ARESETN(s00_axi_aresetn),
@@ -191,6 +243,7 @@ module INTL_v1_0_Top #
 		.i_intl_OH(i_intl_OH),
 
 		.i_sys_rst_flag(i_sys_rst_flag),
+		.i_intl_rst(intl_rst),
 
 		.i_dc_adc_data(i_dc_adc_data),
 		.i_c_adc_raw_data(i_c_adc_raw_data),
@@ -203,7 +256,24 @@ module INTL_v1_0_Top #
 		.i_intl_UV(intl_UV),
 		.i_mps_polarity(mps_polarity),
 
-		///////////////////////
+		.i_intl_OSC_bypass(intl_OSC_bypass),
+		.i_c_intl_OSC_adc_threshold(c_intl_OSC_adc_threshold),
+		.i_c_intl_OSC_count_threshold(c_intl_OSC_count_threshold),
+		.i_v_intl_OSC_adc_threshold(v_intl_OSC_adc_threshold),
+		.i_v_intl_OSC_count_threshold(v_intl_OSC_count_threshold),
+		.i_intl_OSC_period(intl_OSC_period),
+		.i_intl_OSC_cycle_count(intl_OSC_cycle_count),
+
+		.i_intl_REG_mode(intl_REG_mode),
+		.i_intl_REG_bypass(intl_REG_bypass),
+		.i_c_intl_REG_sp_flag(c_intl_REG_sp_flag),
+		.i_v_intl_REG_sp_flag(v_intl_REG_sp_flag),
+		.i_c_intl_REG_sp(c_intl_REG_sp),
+		.i_c_intl_REG_diff(c_intl_REG_diff),
+		.i_c_intl_REG_delay(c_intl_REG_delay),
+		.i_v_intl_REG_sp(v_intl_REG_sp),
+		.i_v_intl_REG_diff(v_intl_REG_diff),
+		.i_v_intl_REG_delay(v_intl_REG_delay),
 
 		.o_intl_state(intl_state)
     );
