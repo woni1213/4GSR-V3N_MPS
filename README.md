@@ -37,7 +37,7 @@ U.V는 내부 DC-Link (SMPS)의 전압을 감지한다. 사용자가 설정한 �
 OSC는 출력의 전류나 전압이 발진되면 발생하며 상시로 구동된다. 단위 시간(i_intl_OSC_period)동안 출력(x_adc_sbc_raw_data)의 P-P(x_intl_OSC_adc_max, x_intl_OSC_adc_min)를 측정한 후 설정한 값(i_x_intl_OSC_adc_threshold)보다 높으면 지정한 변수(x_intl_OSC_cnt)에 횟수를 누적한다. 사용자가 설정한 횟수(i_x_intl_OSC_count_threshold)보다 지정한 변수(x_intl_OSC_cnt)가 높아지면 Interlock(x_intl_OSC)을 발생시킨다.  
 발생된 Interlock은 Latch 상태가 되며 Clear는 i_intl_rst신호가 인가되어야 한다.  
 
-#### REG (Regulation)
+#### REGU (Regulation)
 REG는 출력 전류나 전압을 설정했지만 설정값 까지 도달하지 못한 경우 발생한다. 출력이 재설정(i_x_intl_REG_sp_flag)되면 사용자가 설정한 시간(i_x_intl_REG_delay)동안 Delay를 가진다. 그리고 출력(x_adc_sbc_raw_data)과 설정(i_x_intl_REG_sp)의 절대값(x_intl_REG_abs)과 사용자가 설정한 값(i_x_intl_REG_diff)을 비교한 후 값이 넘어가면 Interlock을 발생시킨다.  
 Reset은 OSC와 동일하다.
 
@@ -58,7 +58,7 @@ Reset은 OSC와 동일하다.
  - 캘리브레이터 등의 소스를 이용하여 ADC Data 측정 (16개의 데이터가 합산되는 것을 염두하여)
  - ADC Data 측정 후 OSC, REG를 제외한 Interlock 테스트
  - ADC Data Offset Binary 값(x_adc_sbc_raw_data) 측정 및 비교
- - OSC, REG 테스트
+ - OSC, REGU 테스트
 
 ### 7. 기타
  - 테스트 항목 중 추가나 수정해야할 것 같으면 수정해도 됨
