@@ -196,8 +196,6 @@ module INTL_v1_0_Top #
 		.i_SP1010(i_SP1010),
 		.i_SP1011(i_SP1011),
 
-
-
 		.S_AXI_ACLK(s00_axi_aclk),
 		.S_AXI_ARESETN(s00_axi_aresetn),
 		.S_AXI_AWADDR(s00_axi_awaddr),
