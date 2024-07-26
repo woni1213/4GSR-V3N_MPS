@@ -111,15 +111,6 @@ set_property -dict { PACKAGE_PIN H12   IOSTANDARD LVCMOS33 } [get_ports { i_SFP_
 set_property -dict { PACKAGE_PIN E10   IOSTANDARD LVCMOS33 } [get_ports { i_SFP_B_LOS }];           # i_SFP_B_LOS
 set_property -dict { PACKAGE_PIN H11   IOSTANDARD LVCMOS33 } [get_ports { i_SFP_B_TXFLT }];         # i_SFP_B_TXFLT
 
-### FRONT
-set_property -dict { PACKAGE_PIN AE12   IOSTANDARD LVCMOS33 } [get_ports { SKSPI }];     # SKSPI
-set_property -dict { PACKAGE_PIN AF12   IOSTANDARD LVCMOS33 } [get_ports { nCSODM }];    # nCSODM  
-set_property -dict { PACKAGE_PIN AG10   IOSTANDARD LVCMOS33 } [get_ports { nCSIOE }];    # nCSIOE
-set_property -dict { PACKAGE_PIN AH10   IOSTANDARD LVCMOS33 } [get_ports { SCSPI }];     # SCSPI
-set_property -dict { PACKAGE_PIN AF11   IOSTANDARD LVCMOS33 } [get_ports { SDSPI }];     # SDSPI
-set_property -dict { PACKAGE_PIN AG11   IOSTANDARD LVCMOS33 } [get_ports { nINTKY }];    # nINTKY
-set_property -dict { PACKAGE_PIN AH12   IOSTANDARD LVCMOS33 } [get_ports { ENCKYA }];    # ENCKYA
-set_property -dict { PACKAGE_PIN AH11   IOSTANDARD LVCMOS33 } [get_ports { ENCKYB }];    # ENCKYB
 
 
 ###Main
@@ -273,3 +264,13 @@ set_property -dict { PACKAGE_PIN L6		IOSTANDARD LVCMOS18 } [get_ports o_SP1006];
 set_property -dict { PACKAGE_PIN AC9	IOSTANDARD LVCMOS18 } [get_ports i_SP1010];			# SP1010
 set_property -dict { PACKAGE_PIN AD9	IOSTANDARD LVCMOS18 } [get_ports i_SP1011];			# SP1011
 
+
+# FRONT
+set_property -dict { PACKAGE_PIN AE12   IOSTANDARD LVCMOS33 } [get_ports spi_clk_3];		# SKSPI
+set_property -dict { PACKAGE_PIN AF12   IOSTANDARD LVCMOS33 } [get_ports o_lcd_cs];			# nCSODM  
+set_property -dict { PACKAGE_PIN AG10   IOSTANDARD LVCMOS33 } [get_ports o_sw_cs];			# nCSIOE
+set_property -dict { PACKAGE_PIN AH10   IOSTANDARD LVCMOS33 } [get_ports mosi_3];			# SCSPI
+set_property -dict { PACKAGE_PIN AF11   IOSTANDARD LVCMOS33 } [get_ports miso_3];			# SDSPI
+set_property -dict { PACKAGE_PIN AG11   IOSTANDARD LVCMOS33 } [get_ports i_sw_intr];			# nINTKY
+set_property -dict { PACKAGE_PIN AH12   IOSTANDARD LVCMOS33 } [get_ports i_ro_en_state_a];		# ENCKYA
+set_property -dict { PACKAGE_PIN AH11   IOSTANDARD LVCMOS33 } [get_ports i_ro_en_state_b];		# ENCKYB
