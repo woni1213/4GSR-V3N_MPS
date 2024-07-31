@@ -215,7 +215,7 @@ module DSP_v1_0_Top #
 	wire [15:0] test_dpbram_rdata;
 	wire [15:0] test_dpbram_wdata;
 
-	//wire DSP_intr;			//ㅅㅈ
+	wire DSP_intr;														//DPRAM test가 끝나서 주석 풂
 
 	AXI4_Lite_S01 #
 	(
@@ -331,7 +331,8 @@ module DSP_v1_0_Top #
 		.i_WF_dsp(WF_dsp),
 		.i_WF_data(i_WF_dsp_ram_dout),
 
-		.i_xintf_PL_ram_dout(xintf_PL_ram_dout),
+		// .i_xintf_PL_ram_dout(xintf_PL_ram_dout),					//불필요한 과정을 생략시킬 수 있어서 수정
+		.i_xintf_PL_ram_dout(test_dpbram_rdata),					//괄호 안에 test_dpbram_rdata가 아닌 i_xintf_PL_ram_dout도 가능
 		.o_xintf_PL_ram_addr(xintf_PL_ram_addr),
 		.o_xintf_PL_ram_ce(xintf_PL_ram_ce),
 		.o_xintf_PL_ram_we(xintf_PL_ram_we),
