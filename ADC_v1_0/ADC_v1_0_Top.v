@@ -346,8 +346,10 @@ module V3N_ADC_v1_0_Top #
 //	assign o_adc_data_valid = v_c_adc_m_ram_ce;
 
 	// Data Assign
-	assign o_v_axis_tvalid = adc_data_valid;
-	assign o_c_axis_tvalid = adc_data_valid;
+	// assign o_v_axis_tvalid = adc_data_valid;					//Custom IP - Xillinx IP를 BUS로 연결할 경우 valid와 ready 신호가 어긋나서 data가 전달되지 못하므로 주석 처리 후 1(high)로 고정
+	// assign o_c_axis_tvalid = adc_data_valid;
+	assign o_v_axis_tvalid = 1;
+	assign o_c_axis_tvalid = 1;
 	assign o_v_adc_o_mosi_data = 24'h000000;
 	assign o_c_adc_o_mosi_data = 24'h000000;
 	assign o_v_adc_m_dout = i_v_adc_i_miso_data;
