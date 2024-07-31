@@ -779,38 +779,38 @@ module AXI4_Lite_S02 #
 	//Write
 	always @(posedge S_AXI_ACLK) 
 	begin 
-		o_intl_ext1			<= ~slv_reg1[0];
-		o_intl_ext2			<= ~slv_reg1[1];
-		o_intl_ext3			<= ~slv_reg1[2];
-		o_intl_ext4			<= ~slv_reg1[3];
-		o_intl_OC_rst		<= slv_reg1[4];
-		o_intl_POC_rst		<= slv_reg1[5];
-		o_intl_ext_bypass1	<= slv_reg1[6];
-		o_intl_ext_bypass2	<= slv_reg1[7];
-		o_intl_ext_bypass3	<= slv_reg1[8];
-		o_intl_ext_bypass4	<= slv_reg1[9];
-		
-		o_intl_OC_p			<= slv_reg2;
-		o_intl_OC_n			<= slv_reg5;
-		o_intl_OV_p			<= slv_reg3;
-		o_intl_OV_n			<= slv_reg6;
-		o_intl_UV			<= slv_reg4[15:0];
-		o_mps_polarity		<= slv_reg7[0];
-		o_en_dsp_boot		<= slv_reg8[0];
-		o_sys_rst			<= slv_reg8[1];
-		o_en_dsp_buf_ctrl	<= slv_reg8[2];
-		o_eeprom_rst		<= slv_reg8[3];
+		o_intl_ext1						<= ~slv_reg1[0];
+		o_intl_ext2						<= ~slv_reg1[1];
+		o_intl_ext3						<= ~slv_reg1[2];
+		o_intl_ext4						<= ~slv_reg1[3];
+		o_intl_OC_rst					<= slv_reg1[4];
+		o_intl_POC_rst					<= slv_reg1[5];
+		o_intl_ext_bypass1				<= slv_reg1[6];
+		o_intl_ext_bypass2				<= slv_reg1[7];
+		o_intl_ext_bypass3				<= slv_reg1[8];
+		o_intl_ext_bypass4				<= slv_reg1[9];
 
-		o_SP601				<= slv_reg10[0];
-		o_SP1005			<= slv_reg10[1];
-		o_SP1006			<= slv_reg10[2];
+		o_intl_OC_p						<= slv_reg2;
+		o_intl_OC_n						<= slv_reg5;
+		o_intl_OV_p						<= slv_reg3;
+		o_intl_OV_n						<= slv_reg6;
+		o_intl_UV						<= slv_reg4[15:0];
+		o_mps_polarity					<= slv_reg7[0];
+		o_en_dsp_boot					<= slv_reg8[0];
+		o_sys_rst						<= slv_reg8[1];
+		o_en_dsp_buf_ctrl				<= slv_reg8[2];
+		o_eeprom_rst					<= slv_reg8[3];
 
-		o_intl_rst				<= slv_reg12[0];
-		o_intl_REGU_mode		<= slv_reg12[1];
-		o_intl_OSC_bypass		<= slv_reg12[2];
-		o_intl_REGU_bypass		<= slv_reg12[3];
-		o_c_intl_REGU_sp_flag	<= slv_reg12[4];
-		o_v_intl_REGU_sp_flag	<= slv_reg12[5];
+		o_SP601							<= slv_reg10[0];
+		o_SP1005						<= slv_reg10[1];
+		o_SP1006						<= slv_reg10[2];
+
+		o_intl_rst						<= slv_reg12[0];
+		o_intl_REGU_mode				<= slv_reg12[1];
+		o_intl_OSC_bypass				<= slv_reg12[2];
+		o_intl_REGU_bypass				<= slv_reg12[3];
+		o_c_intl_REGU_sp_flag			<= slv_reg12[4];
+		o_v_intl_REGU_sp_flag			<= slv_reg12[5];
 
 		o_c_intl_OSC_adc_threshold 		<= slv_reg13;
 		o_c_intl_OSC_count_threshold 	<= slv_reg14[9:0];
@@ -830,10 +830,10 @@ module AXI4_Lite_S02 #
 	always@(posedge S_AXI_ACLK) 
 	begin  
 
-		slv_reg0[15:0]	<= i_intl_state;
-		slv_reg9[0]		<= i_ext_trg;
-		slv_reg11[0]	<= i_SP1010;
-		slv_reg11[1]	<= i_SP1011;
+		slv_reg0[15:0]					<= i_intl_state;
+		slv_reg9[0]						<= i_ext_trg;
+		slv_reg11[0]					<= i_SP1010;
+		slv_reg11[1]					<= i_SP1011;
 	end
 
 	// User logic ends

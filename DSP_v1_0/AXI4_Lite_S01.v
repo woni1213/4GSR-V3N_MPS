@@ -48,12 +48,6 @@ module AXI4_Lite_S01 #
 	output reg 	[15:0]		o_Write_Index,
 	output reg 	[31:0]		o_Write_DATA,
 
-	output reg [9:0]		o_test_dpbram_addr,		// Test용 DPBRAM ADDR
-	output reg 				o_test_dpbram_en,		// Test용 DPBRAM Enable
-	output reg 				o_test_dpbram_w_en,		// Test용 DPBRAM Wirte Flag
-	output reg 				o_test_dpbram_DSP_intr,	// Test용 DPBRAM DSP Interrupt
-	output reg [15:0]		o_test_dpbram_wdata,	// Test용 DPBRAM Write Data
-
 	//Read
 	input 					i_WF_INT_0,
 	input 					i_WF_INT_500,
@@ -99,8 +93,6 @@ module AXI4_Lite_S01 #
 	input [31:0]			i_DSP_Eruption_C,
 	input [31:0]			i_F_DSP_ADC_C,
 	input [31:0]			i_F_DSP_ADC_V,
-
-	input [15:0]			i_test_dpbram_rdata,		// Test용 DPBRAM Read Data
 
 
 	// User ports ends
@@ -374,7 +366,7 @@ module AXI4_Lite_S01 #
 	      slv_reg4 <= 0;
 	      slv_reg5 <= 0;
 	      slv_reg6 <= 0;
-	    //   slv_reg7 <= 0;
+	      slv_reg7 <= 0;
 	      slv_reg8 <= 0;
 	      slv_reg9 <= 0;
 	    //   slv_reg10 <= 0;
@@ -485,13 +477,13 @@ module AXI4_Lite_S01 #
 	                // Slave register 6
 	                slv_reg6[(byte_index*8) +: 8] <= S_AXI_WDATA[(byte_index*8) +: 8];
 	              end  
-	        //   7'h07:
-	        //     for ( byte_index = 0; byte_index <= (C_S_AXI_DATA_WIDTH/8)-1; byte_index = byte_index+1 )
-	        //       if ( S_AXI_WSTRB[byte_index] == 1 ) begin
-	        //         // Respective byte enables are asserted as per write strobes 
-	        //         // Slave register 7
-	        //         slv_reg7[(byte_index*8) +: 8] <= S_AXI_WDATA[(byte_index*8) +: 8];
-	        //       end  
+	          7'h07:
+	            for ( byte_index = 0; byte_index <= (C_S_AXI_DATA_WIDTH/8)-1; byte_index = byte_index+1 )
+	              if ( S_AXI_WSTRB[byte_index] == 1 ) begin
+	                // Respective byte enables are asserted as per write strobes 
+	                // Slave register 7
+	                slv_reg7[(byte_index*8) +: 8] <= S_AXI_WDATA[(byte_index*8) +: 8];
+	              end  
 	          7'h08:
 	            for ( byte_index = 0; byte_index <= (C_S_AXI_DATA_WIDTH/8)-1; byte_index = byte_index+1 )
 	              if ( S_AXI_WSTRB[byte_index] == 1 ) begin
@@ -892,7 +884,7 @@ module AXI4_Lite_S01 #
 	                      slv_reg4 <= slv_reg4;
 	                      slv_reg5 <= slv_reg5;
 	                      slv_reg6 <= slv_reg6;
-	                    //   slv_reg7 <= slv_reg7;
+	                      slv_reg7 <= slv_reg7;
 	                      slv_reg8 <= slv_reg8;
 	                      slv_reg9 <= slv_reg9;
 	                    //   slv_reg10 <= slv_reg10;
@@ -1162,14 +1154,7 @@ module AXI4_Lite_S01 #
 		o_Ready					<= slv_reg12 [0];
 		o_Hart_beat				<= slv_reg12 [1];
 		o_Write_Index			<= slv_reg60 [15:0];
-		o_Write_DATA			<= slv_reg61;
-
-		o_test_dpbram_addr		<= slv_reg62;
-		o_test_dpbram_en		<= slv_reg63[0];
-		o_test_dpbram_w_en		<= slv_reg63[1];
-		o_test_dpbram_DSP_intr	<= slv_reg63[2];
-		o_test_dpbram_wdata		<= slv_reg52;
-		
+		o_Write_DATA			<= slv_reg61;		
     end
 
 	// Read
@@ -1219,8 +1204,6 @@ module AXI4_Lite_S01 #
 		slv_reg49 			<= i_DSP_Eruption_C;
 		slv_reg50 			<= i_F_DSP_ADC_C;
 		slv_reg51 			<= i_F_DSP_ADC_V;
-
-		slv_reg7			<= i_test_dpbram_rdata;
 	end
 
 	// User logic ends
