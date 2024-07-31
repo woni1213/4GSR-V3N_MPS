@@ -7,7 +7,7 @@ MPS INTerLock Module
 
 24.07.04 :	최초 생성
 24.07.19 : 	OSC Interlock 추가
-24.07.22 :	REG Interlock 추가
+24.07.22 :	REGU Interlock 추가
 
 이성진 차장의 퇴사로 인하여 MPS PL 프로그래밍
 
@@ -32,6 +32,11 @@ MPS INTerLock Module
  9	: S/W OV
  10	: S/W OC
 
+ 11	: OSC 전류 인터락
+ 12	: OSC 전압 인터락
+ 13	: REGU 전류 인터락
+ 14	: REGU 전류 인터락
+
  15 : System Reset Monitor
 
 2. i_intl_ctrl (삭제 - AXI Module에서 분할함)
@@ -52,11 +57,6 @@ MPS INTerLock Module
  10	: 외부 인터락 입력 3 Bypass
  11	: 외부 인터락 입력 4 Bypass
 
- 12	: OSC 전류 인터락
- 13	: OSC 전압 인터락
- 14	: REG 전류 인터락
- 15	: REG 전류 인터락
-
 3. Oscillation Interlock
  - 출력이 발진될 때 동작
  - 2의 보수로 구성된 ADC Data를 ADC IP에서 16번 더한 값을 기준으로 동작함
@@ -69,8 +69,8 @@ MPS INTerLock Module
  - 출력의 모드에 따라서 동작함 (C.C or C.V)
 
 5. 검토 사항
- - OSC, REG는 Offset Binary 타입이고 나머지는 TCC 타입임
- - REG 관련 time, diff 값은 비트 수 조절해야함
+ - OSC, REGU는 Offset Binary 타입이고 나머지는 TCC 타입임
+ - REGU 관련 time, diff 값은 비트 수 조절해야함
 
 */
 
@@ -98,7 +98,7 @@ module INTL
 
 	// Reset
 	input i_sys_rst_flag,
-	input i_intl_rst,							// OSC, REG Interlock Reset
+	input i_intl_rst,							// OSC, REGU Interlock Reset
 
 	// ADC
 	input [15:0] i_dc_adc_data,
@@ -121,17 +121,17 @@ module INTL
 	input [19:0] i_intl_OSC_period,				// Count Cycle Period. Max 1,048,576 = 5,242,880 ns
 	input [9:0] i_intl_OSC_cycle_count,			// Count Cycle Periode * i_intl_OSC_cycle_count = Total Period. Max 1024
 	
-	// Regulation (REG)
-	input i_intl_REG_mode,						// Output Mode (0 : C.C or 1 : C.V)
-	input i_intl_REG_bypass,
-	input i_c_intl_REG_sp_flag,					// Output Set Flag (REG Start)
-	input i_v_intl_REG_sp_flag,
-	input [31:0] i_c_intl_REG_sp,				// Output Set Value
-	input [31:0] i_c_intl_REG_diff,				// Regulation Differential Threashold
-	input [31:0] i_c_intl_REG_delay,			// Regulation Delay Time
-	input [31:0] i_v_intl_REG_sp,
-	input [31:0] i_v_intl_REG_diff,
-	input [31:0] i_v_intl_REG_delay,
+	// REGulation (REGU)
+	input i_intl_REGU_mode,						// Output Mode (0 : C.C or 1 : C.V)
+	input i_intl_REGU_bypass,
+	input i_c_intl_REGU_sp_flag,					// Output Set Flag (REGU Start)
+	input i_v_intl_REGU_sp_flag,
+	input [31:0] i_c_intl_REGU_sp,				// Output Set Value
+	input [31:0] i_c_intl_REGU_diff,				// Regulation Differential Threashold
+	input [31:0] i_c_intl_REGU_delay,			// Regulation Delay Time
+	input [31:0] i_v_intl_REGU_sp,
+	input [31:0] i_v_intl_REGU_diff,
+	input [31:0] i_v_intl_REGU_delay,
 
 	// Interlock State
 	output reg [15:0] o_intl_state
@@ -142,17 +142,17 @@ module INTL
 	parameter OSC_COUNT	= 2;
 	parameter OSC_RESET	= 3;
 
-	parameter REG_IDLE	= 0;
-	parameter REG_DELAY	= 1;
-	parameter REG_RUN	= 2;
-	parameter REG_DONE	= 3;
+	parameter REGU_IDLE	= 0;
+	parameter REGU_DELAY	= 1;
+	parameter REGU_RUN	= 2;
+	parameter REGU_DONE	= 3;
 
 	// FSM
 	reg [1:0] OSC_state;
 	reg [1:0] OSC_n_state;
 
-	reg [1:0] REG_state;
-	reg [1:0] REG_n_state;
+	reg [1:0] REGU_state;
+	reg [1:0] REGU_n_state;
 
 	// Interlock Flag
 	wire intl_UV;
@@ -160,13 +160,13 @@ module INTL
 	wire intl_OC;
 	reg c_intl_OSC;
 	reg v_intl_OSC;
-	reg c_intl_REG;
-	reg v_intl_REG;
+	reg c_intl_REGU;
+	reg v_intl_REGU;
 
 	// Counter
 	reg [19:0] intl_OSC_period_cnt;
 	reg [9:0] intl_OSC_cycle_cnt;
-	reg [31:0] intl_REG_cnt;
+	reg [31:0] intl_REGU_cnt;
 
 	// OSC
 	wire [31:0] c_adc_sbc_raw_data;
@@ -179,9 +179,9 @@ module INTL
 	reg [31:0] v_intl_OSC_adc_min;
 	reg [9:0] v_intl_OSC_cnt;
 
-	// REG
-	wire [31:0] c_intl_REG_abs;
-	wire [31:0] v_intl_REG_abs;
+	// REGU
+	wire [31:0] c_intl_REGU_abs;
+	wire [31:0] v_intl_REGU_abs;
 
 	// OSC FSM Control
 	always @(posedge i_clk or negedge i_rst)
@@ -193,14 +193,14 @@ module INTL
             OSC_state <= OSC_n_state;
     end
 
-	// REG FSM Control
+	// REGU FSM Control
 	always @(posedge i_clk or negedge i_rst)
     begin
         if (~i_rst)
-            REG_state <= REG_IDLE;
+            REGU_state <= REGU_IDLE;
 
         else 
-            REG_state <= REG_n_state;
+            REGU_state <= REGU_n_state;
     end
 
 	// OSC FSM
@@ -245,46 +245,46 @@ module INTL
 		endcase
 	end
 
-	// REG FSM
+	// REGU FSM
 	always @(*)
     begin
-        case (REG_state)
-            REG_IDLE :
+        case (REGU_state)
+            REGU_IDLE :
             begin
-                if ((i_c_intl_REG_sp_flag || i_v_intl_REG_sp_flag) && ~(c_intl_REG || v_intl_REG) && ~i_intl_REG_bypass)
-                    REG_n_state <= REG_DELAY;
+                if ((i_c_intl_REGU_sp_flag || i_v_intl_REGU_sp_flag) && ~(c_intl_REGU || v_intl_REGU) && ~i_intl_REGU_bypass)
+                    REGU_n_state <= REGU_DELAY;
 
                 else
-                    REG_n_state <= REG_IDLE;
+                    REGU_n_state <= REGU_IDLE;
             end
 
-			REG_DELAY :
+			REGU_DELAY :
             begin
-				if (i_intl_REG_mode)
-					if (intl_REG_cnt == i_v_intl_REG_delay)
-						REG_n_state <= REG_RUN;
+				if (i_intl_REGU_mode)
+					if (intl_REGU_cnt == i_v_intl_REGU_delay)
+						REGU_n_state <= REGU_RUN;
 
 					else
-						REG_n_state <= REG_DELAY;
+						REGU_n_state <= REGU_DELAY;
 				
 				else
-					if (intl_REG_cnt == i_c_intl_REG_delay)
-						REG_n_state <= REG_RUN;
+					if (intl_REGU_cnt == i_c_intl_REGU_delay)
+						REGU_n_state <= REGU_RUN;
 
 					else
-						REG_n_state <= REG_DELAY;
+						REGU_n_state <= REGU_DELAY;
             end
 
-			REG_RUN :
-                REG_n_state <= REG_DONE;
+			REGU_RUN :
+                REGU_n_state <= REGU_DONE;
 
-			REG_DONE :
+			REGU_DONE :
             begin
-                if (~i_c_intl_REG_sp_flag && ~i_v_intl_REG_sp_flag)
-                    REG_n_state <= REG_IDLE;
+                if (~i_c_intl_REGU_sp_flag && ~i_v_intl_REGU_sp_flag)
+                    REGU_n_state <= REGU_IDLE;
 
                 else
-                    REG_n_state <= REG_DONE;
+                    REGU_n_state <= REGU_DONE;
             end
 		endcase
 	end
@@ -318,17 +318,17 @@ module INTL
 			intl_OSC_cycle_cnt <= intl_OSC_cycle_cnt;
 	end
 
-	// REG Delay Counter
+	// REGU Delay Counter
 	always @(posedge i_clk or negedge i_rst) 
 	begin
     	if (~i_rst) 
-        	intl_REG_cnt <= 0;
+        	intl_REGU_cnt <= 0;
 
-		else if (REG_state == REG_DELAY)
-			intl_REG_cnt <= intl_REG_cnt + 1;
+		else if (REGU_state == REGU_DELAY)
+			intl_REGU_cnt <= intl_REGU_cnt + 1;
 
 		else
-			intl_REG_cnt <= 0;
+			intl_REGU_cnt <= 0;
 	end
 
 	/***** Current OSC  *****/
@@ -336,12 +336,19 @@ module INTL
 	// OSC ADC Data Min Calc
 	always @(posedge i_clk or negedge i_rst) 
 	begin
-    	if (~i_rst || (OSC_state == OSC_IDLE) || (OSC_state == OSC_RESET))
-			c_intl_OSC_adc_min <= 0;
+		// if (~i_rst || (OSC_state == OSC_IDLE) || (OSC_state == OSC_RESET))			//Synth 8-5413 Critical Warning이 발생하여 수정 (조건이 ~i_rst와 함께 3개 이상일 때 발생하는 것으로 예상)
+			// c_intl_OSC_adc_min <= 0;													//0보다 작은 값은 없으므로 비교가 되지 않아 수정 중
+		if (~i_rst)																		//해당 조건에서 c_intl_OSC_adc_min <= c_adc_sbc_raw_data;를 할 경우
+			c_intl_OSC_adc_min <= 0;													
+
+		else if ((OSC_state == OSC_IDLE) || (OSC_state == OSC_RESET))
+			c_intl_OSC_adc_min <= c_adc_sbc_raw_data;									//Netlist 29-358 Critical Warning이 발생하므로 수정
 
 		else if (OSC_state == OSC_RUN)
 		begin
-			if (c_intl_OSC_adc_min < c_adc_sbc_raw_data)
+			// if (c_intl_OSC_adc_min < c_adc_sbc_raw_data)								//c_intl_OSC_adc_max와 같은 값이 나오므로 수정
+			// 	c_intl_OSC_adc_min <= c_adc_sbc_raw_data;
+			if (c_adc_sbc_raw_data < c_intl_OSC_adc_min)
 				c_intl_OSC_adc_min <= c_adc_sbc_raw_data;
 			
 			else
@@ -355,8 +362,11 @@ module INTL
 	// OSC ADC Data Max Calc
 	always @(posedge i_clk or negedge i_rst) 
 	begin
-    	if (~i_rst || (OSC_state == OSC_IDLE) || (OSC_state == OSC_RESET))
-			c_intl_OSC_adc_max <= 0;
+    	if (~i_rst)																		//Synth 8-5413 에러가 발생하여 수정 (조건이 ~i_rst와 함께 3개 이상일 때 발생하는 것으로 예상)
+			c_intl_OSC_adc_max <= 0;													//c_intl_OSC_adc_min과 맞춰주기 위해 수정 중 해당 조건에서 c_intl_OSC_adc_max <= c_adc_sbc_raw_data;를 할 경우
+
+		else if ((OSC_state == OSC_IDLE) || (OSC_state == OSC_RESET))
+			c_intl_OSC_adc_max <= c_adc_sbc_raw_data;									//Netlist 29-358 Critical Warning이 발생하므로 수정
 
 		else if (OSC_state == OSC_RUN)
 		begin
@@ -411,12 +421,15 @@ module INTL
 	// OSC ADC Data Min Calc
 	always @(posedge i_clk or negedge i_rst) 
 	begin
-    	if (~i_rst || (OSC_state == OSC_IDLE) || (OSC_state == OSC_RESET))
-			v_intl_OSC_adc_min <= 0;
+		if (~i_rst)																		//0보다 작은 값은 없으므로 비교가 되지 않아 수정 중 해당 조건에서 v_intl_OSC_adc_min <= v_adc_sbc_raw_data;를 할 경우
+			v_intl_OSC_adc_min <= 0;													
+
+		else if ((OSC_state == OSC_IDLE) || (OSC_state == OSC_RESET))
+			v_intl_OSC_adc_min <= v_adc_sbc_raw_data;									//Netlist 29-358 Critical Warning이 발생하므로 수정
 
 		else if (OSC_state == OSC_RUN)
 		begin
-			if (v_intl_OSC_adc_min < v_adc_sbc_raw_data)
+			if (v_adc_sbc_raw_data < v_intl_OSC_adc_min)								//v_intl_OSC_adc_max와 같은 값이 나오므로 수정
 				v_intl_OSC_adc_min <= v_adc_sbc_raw_data;
 			
 			else
@@ -430,8 +443,11 @@ module INTL
 	// OSC ADC Data Max Calc
 	always @(posedge i_clk or negedge i_rst) 
 	begin
-    	if (~i_rst || (OSC_state == OSC_IDLE) || (OSC_state == OSC_RESET))
-			v_intl_OSC_adc_max <= 0;
+    	if (~i_rst)																		//Synth 8-5413 에러가 발생하여 수정 (조건이 ~i_rst와 함께 3개 이상일 때 발생하는 것으로 예상)
+			v_intl_OSC_adc_max <= 0;													//v_intl_OSC_adc_min과 맞춰주기 위해 수정 중 해당 조건에서 v_intl_OSC_adc_max <= v_adc_sbc_raw_data;를 할 경우
+
+		else if ((OSC_state == OSC_IDLE) || (OSC_state == OSC_RESET))
+			v_intl_OSC_adc_max <= v_adc_sbc_raw_data;									//Netlist 29-358 Critical Warning이 발생하므로 수정
 
 		else if (OSC_state == OSC_RUN)
 		begin
@@ -478,49 +494,50 @@ module INTL
 			v_intl_OSC <= 1;
 
 		else
-			v_intl_OSC <= c_intl_OSC;
+			// v_intl_OSC <= c_intl_OSC;													//REGU 매칭이 잘못되어 수정
+			v_intl_OSC <= v_intl_OSC;
 	end
 
-	/***** REG *****/
+	/***** REGU *****/
 
-	// REG Interlock
+	// REGU Interlock
 	always @(posedge i_clk or negedge i_rst) 
 	begin
     	if (~i_rst || i_intl_rst)
 		begin
-			v_intl_REG <= 0;
-			c_intl_REG <= 0;
+			v_intl_REGU <= 0;
+			c_intl_REGU <= 0;
 		end
 
-		else if (REG_state == REG_RUN)
+		else if (REGU_state == REGU_RUN)
 		begin
-			if (i_intl_REG_mode)
+			if (i_intl_REGU_mode)
 			begin
-				if (v_intl_REG_abs > i_v_intl_REG_diff)
+				if (v_intl_REGU_abs > i_v_intl_REGU_diff)
 				begin
-					v_intl_REG <= 1;
-					c_intl_REG <= c_intl_REG;
+					v_intl_REGU <= 1;
+					c_intl_REGU <= c_intl_REGU;
 				end
 					
 				else
 				begin
-					v_intl_REG <= v_intl_REG;
-					c_intl_REG <= c_intl_REG;
+					v_intl_REGU <= v_intl_REGU;
+					c_intl_REGU <= c_intl_REGU;
 				end
 			end
 
 			else
 			begin
-				if (c_intl_REG_abs > i_c_intl_REG_diff)
+				if (c_intl_REGU_abs > i_c_intl_REGU_diff)
 				begin
-					v_intl_REG <= v_intl_REG;
-					c_intl_REG <= 1;
+					v_intl_REGU <= v_intl_REGU;
+					c_intl_REGU <= 1;
 				end
 					
 				else
 				begin
-					v_intl_REG <= v_intl_REG;
-					c_intl_REG <= c_intl_REG;
+					v_intl_REGU <= v_intl_REGU;
+					c_intl_REGU <= c_intl_REGU;
 				end
 					
 			end
@@ -528,8 +545,8 @@ module INTL
 
 		else
 		begin
-			v_intl_REG <= v_intl_REG;
-			c_intl_REG <= c_intl_REG;
+			v_intl_REGU <= v_intl_REGU;
+			c_intl_REGU <= c_intl_REGU;
 		end
 	end
 
@@ -559,8 +576,8 @@ module INTL
 
 			o_intl_state[11] <= c_intl_OSC;
 			o_intl_state[12] <= v_intl_OSC;
-			o_intl_state[13] <= c_intl_REG;
-			o_intl_state[14] <= v_intl_REG;
+			o_intl_state[13] <= c_intl_REGU;
+			o_intl_state[14] <= v_intl_REGU;
 
 			o_intl_state[15] <= ~i_sys_rst_flag;
     	end
@@ -575,8 +592,8 @@ module INTL
 	assign c_adc_sbc_raw_data = {~i_c_adc_raw_data[27], i_c_adc_raw_data[26:0]};
 	assign v_adc_sbc_raw_data = {~i_v_adc_raw_data[27], i_v_adc_raw_data[26:0]};
 
-	assign c_intl_REG_abs = (i_c_intl_REG_sp > c_adc_sbc_raw_data) ? 
-							i_c_intl_REG_sp - c_adc_sbc_raw_data : c_adc_sbc_raw_data - i_c_intl_REG_sp;
-	assign v_intl_REG_abs = (i_v_intl_REG_sp > v_adc_sbc_raw_data) ? 
-							i_v_intl_REG_sp - v_adc_sbc_raw_data : v_adc_sbc_raw_data - i_v_intl_REG_sp;
+	assign c_intl_REGU_abs = (i_c_intl_REGU_sp > c_adc_sbc_raw_data) ? 
+							i_c_intl_REGU_sp - c_adc_sbc_raw_data : c_adc_sbc_raw_data - i_c_intl_REGU_sp;
+	assign v_intl_REGU_abs = (i_v_intl_REGU_sp > v_adc_sbc_raw_data) ? 
+							i_v_intl_REGU_sp - v_adc_sbc_raw_data : v_adc_sbc_raw_data - i_v_intl_REGU_sp;
 endmodule

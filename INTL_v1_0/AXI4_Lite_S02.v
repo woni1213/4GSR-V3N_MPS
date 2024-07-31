@@ -57,16 +57,16 @@ module AXI4_Lite_S02 #
 	output reg [19:0] o_intl_OSC_period,
 	output reg [9:0] o_intl_OSC_cycle_count,
 
-	output reg o_intl_REG_mode,
-	output reg o_intl_REG_bypass,
-	output reg o_c_intl_REG_sp_flag,
-	output reg o_v_intl_REG_sp_flag,
-	output reg [31:0] o_c_intl_REG_sp,
-	output reg [31:0] o_c_intl_REG_diff,
-	output reg [31:0] o_c_intl_REG_delay,
-	output reg [31:0] o_v_intl_REG_sp,
-	output reg [31:0] o_v_intl_REG_diff,
-	output reg [31:0] o_v_intl_REG_delay,
+	output reg o_intl_REGU_mode,
+	output reg o_intl_REGU_bypass,
+	output reg o_c_intl_REGU_sp_flag,
+	output reg o_v_intl_REGU_sp_flag,
+	output reg [31:0] o_c_intl_REGU_sp,
+	output reg [31:0] o_c_intl_REGU_diff,
+	output reg [31:0] o_c_intl_REGU_delay,
+	output reg [31:0] o_v_intl_REGU_sp,
+	output reg [31:0] o_v_intl_REGU_diff,
+	output reg [31:0] o_v_intl_REGU_delay,
 
 	//Read
 	input [15:0] i_intl_state,
@@ -806,11 +806,11 @@ module AXI4_Lite_S02 #
 		o_SP1006			<= slv_reg10[2];
 
 		o_intl_rst				<= slv_reg12[0];
-		o_intl_REG_mode			<= slv_reg12[1];
+		o_intl_REGU_mode		<= slv_reg12[1];
 		o_intl_OSC_bypass		<= slv_reg12[2];
-		o_intl_REG_bypass		<= slv_reg12[3];
-		o_c_intl_REG_sp_flag	<= slv_reg12[4];
-		o_v_intl_REG_sp_flag	<= slv_reg12[5];
+		o_intl_REGU_bypass		<= slv_reg12[3];
+		o_c_intl_REGU_sp_flag	<= slv_reg12[4];
+		o_v_intl_REGU_sp_flag	<= slv_reg12[5];
 
 		o_c_intl_OSC_adc_threshold 		<= slv_reg13;
 		o_c_intl_OSC_count_threshold 	<= slv_reg14[9:0];
@@ -818,12 +818,12 @@ module AXI4_Lite_S02 #
 		o_v_intl_OSC_count_threshold 	<= slv_reg16[9:0];
 		o_intl_OSC_period 				<= slv_reg17[19:0];
 		o_intl_OSC_cycle_count 			<= slv_reg18[9:0];
-		o_c_intl_REG_sp 				<= slv_reg19;
-		o_c_intl_REG_diff 				<= slv_reg20;
-		o_c_intl_REG_delay 				<= slv_reg21;
-		o_v_intl_REG_sp 				<= slv_reg22;
-		o_v_intl_REG_diff 				<= slv_reg23;
-		o_v_intl_REG_delay 				<= slv_reg24;
+		o_c_intl_REGU_sp 				<= slv_reg19;
+		o_c_intl_REGU_diff 				<= slv_reg20;
+		o_c_intl_REGU_delay 			<= slv_reg21;
+		o_v_intl_REGU_sp 				<= slv_reg22;
+		o_v_intl_REGU_diff 				<= slv_reg23;
+		o_v_intl_REGU_delay 			<= slv_reg24;
 	end
 
 	//Read

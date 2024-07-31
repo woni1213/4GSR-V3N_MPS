@@ -17,7 +17,7 @@ MPS INTerLock Module
 
  - o_en_dsp_boot : 1
  - o_sys_rst : 0
- - o_en_dsp_buf_ctrl : 1
+ - o_en_dsp_buf_ctrl : 0 (토글시켜줬으므로 AXI에서 입력해줘야하는 initial data는 0)
  - o_eeprom_rst : 1
 
 */
@@ -123,16 +123,19 @@ module INTL_v1_0_Top #
 	wire [19:0] intl_OSC_period;
 	wire [9:0] intl_OSC_cycle_count;
 
-	wire intl_REG_mode;
-	wire intl_REG_bypass;
-	wire c_intl_REG_sp_flag;
-	wire v_intl_REG_sp_flag;
-	wire [31:0] c_intl_REG_sp;
-	wire [31:0] c_intl_REG_diff;
-	wire [31:0] c_intl_REG_delay;
-	wire [31:0] v_intl_REG_sp;
-	wire [31:0] v_intl_REG_diff;
-	wire [31:0] v_intl_REG_delay;
+	wire intl_REGU_mode;
+	wire intl_REGU_bypass;
+	wire c_intl_REGU_sp_flag;
+	wire v_intl_REGU_sp_flag;
+	wire [31:0] c_intl_REGU_sp;
+	wire [31:0] c_intl_REGU_diff;
+	wire [31:0] c_intl_REGU_delay;
+	wire [31:0] v_intl_REGU_sp;
+	wire [31:0] v_intl_REGU_diff;
+	wire [31:0] v_intl_REGU_delay;
+
+	wire t_en_dsp_buf_ctrl;											//o_en_dsp_buf_ctrl을 not 시켜주기 위해 필요
+	wire t_o_SP601;													//o_SP601을 not 시켜주기 위해 필요
 
 	AXI4_Lite_S02 #
 	(
@@ -162,10 +165,12 @@ module INTL_v1_0_Top #
         
 		.o_en_dsp_boot(o_en_dsp_boot),
 		.o_sys_rst(o_sys_rst),
-		.o_en_dsp_buf_ctrl(~o_en_dsp_buf_ctrl),
+		// .o_en_dsp_buf_ctrl(~o_en_dsp_buf_ctrl),					//AXI input에 상관없이 1로 고정돼서 t_en_dsp_buf_ctrl 추가하여 수정
+		.o_en_dsp_buf_ctrl(t_en_dsp_buf_ctrl),
 		.o_eeprom_rst(o_eeprom_rst),
 
-		.o_SP601(~o_SP601),
+		// .o_SP601(~o_SP601),										//AXI input에 상관없이 1로 고정돼서 t_en_dsp_buf_ctrl 추가하여 수정
+		.o_SP601(t_o_SP601),
 		.o_SP1005(o_SP1005),
 		.o_SP1006(o_SP1006),
 
@@ -179,16 +184,16 @@ module INTL_v1_0_Top #
 		.o_intl_OSC_period(intl_OSC_period),
 		.o_intl_OSC_cycle_count(intl_OSC_cycle_count),
 
-		.o_intl_REG_mode(intl_REG_mode),
-		.o_intl_REG_bypass(intl_REG_bypass),
-		.o_c_intl_REG_sp_flag(c_intl_REG_sp_flag),
-		.o_v_intl_REG_sp_flag(v_intl_REG_sp_flag),
-		.o_c_intl_REG_sp(c_intl_REG_sp),
-		.o_c_intl_REG_diff(c_intl_REG_diff),
-		.o_c_intl_REG_delay(c_intl_REG_delay),
-		.o_v_intl_REG_sp(v_intl_REG_sp),
-		.o_v_intl_REG_diff(v_intl_REG_diff),
-		.o_v_intl_REG_delay(v_intl_REG_delay),
+		.o_intl_REGU_mode(intl_REGU_mode),
+		.o_intl_REGU_bypass(intl_REGU_bypass),
+		.o_c_intl_REGU_sp_flag(c_intl_REGU_sp_flag),
+		.o_v_intl_REGU_sp_flag(v_intl_REGU_sp_flag),
+		.o_c_intl_REGU_sp(c_intl_REGU_sp),
+		.o_c_intl_REGU_diff(c_intl_REGU_diff),
+		.o_c_intl_REGU_delay(c_intl_REGU_delay),
+		.o_v_intl_REGU_sp(v_intl_REGU_sp),
+		.o_v_intl_REGU_diff(v_intl_REGU_diff),
+		.o_v_intl_REGU_delay(v_intl_REGU_delay),
 
 		// Read (PL - PS)
 		.i_intl_state(intl_state),
@@ -264,20 +269,22 @@ module INTL_v1_0_Top #
 		.i_intl_OSC_period(intl_OSC_period),
 		.i_intl_OSC_cycle_count(intl_OSC_cycle_count),
 
-		.i_intl_REG_mode(intl_REG_mode),
-		.i_intl_REG_bypass(intl_REG_bypass),
-		.i_c_intl_REG_sp_flag(c_intl_REG_sp_flag),
-		.i_v_intl_REG_sp_flag(v_intl_REG_sp_flag),
-		.i_c_intl_REG_sp(c_intl_REG_sp),
-		.i_c_intl_REG_diff(c_intl_REG_diff),
-		.i_c_intl_REG_delay(c_intl_REG_delay),
-		.i_v_intl_REG_sp(v_intl_REG_sp),
-		.i_v_intl_REG_diff(v_intl_REG_diff),
-		.i_v_intl_REG_delay(v_intl_REG_delay),
+		.i_intl_REGU_mode(intl_REGU_mode),
+		.i_intl_REGU_bypass(intl_REGU_bypass),
+		.i_c_intl_REGU_sp_flag(c_intl_REGU_sp_flag),
+		.i_v_intl_REGU_sp_flag(v_intl_REGU_sp_flag),
+		.i_c_intl_REGU_sp(c_intl_REGU_sp),
+		.i_c_intl_REGU_diff(c_intl_REGU_diff),
+		.i_c_intl_REGU_delay(c_intl_REGU_delay),
+		.i_v_intl_REGU_sp(v_intl_REGU_sp),
+		.i_v_intl_REGU_diff(v_intl_REGU_diff),
+		.i_v_intl_REGU_delay(v_intl_REGU_delay),
 
 		.o_intl_state(intl_state)
     );
 
 	assign o_intl_state = intl_state;
+	assign o_en_dsp_buf_ctrl = ~t_en_dsp_buf_ctrl;
+	assign o_SP601 = ~t_o_SP601;
 
 endmodule
