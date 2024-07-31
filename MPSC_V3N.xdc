@@ -161,27 +161,28 @@ set_property -dict { PACKAGE_PIN AH11   IOSTANDARD LVCMOS33 } [get_ports { ENCKY
 
 ### ADC_v1_0
 # Voltage ADC
-set_property -dict { PACKAGE_PIN AH8	IOSTANDARD LVCMOS18 } [get_ports mosi_0];			# MSDADC0A
-set_property -dict { PACKAGE_PIN AF7	IOSTANDARD LVCMOS18 } [get_ports i_v_adc_busy_0];	# MBYADCA
+# set_property -dict { PACKAGE_PIN AH8	IOSTANDARD LVCMOS18 } [get_ports mosi_0];			# MSDADC0A  #회로도와 비교했을 때 miso와 mosi가 반대로 매칭되어 있어 수정
+set_property -dict { PACKAGE_PIN AH8	IOSTANDARD LVCMOS18 } [get_ports miso_0];			# MSDADC0A
 set_property -dict { PACKAGE_PIN AE8	IOSTANDARD LVCMOS18 } [get_ports n_cs_0];   		# MCSADCA~
 set_property -dict { PACKAGE_PIN AB8	IOSTANDARD LVCMOS18 } [get_ports spi_clk_0];   		# MSKADCA
-set_property -dict { PACKAGE_PIN AC8	IOSTANDARD LVCMOS18 } [get_ports miso_0];   		# MSCADCA
+# set_property -dict { PACKAGE_PIN AC8	IOSTANDARD LVCMOS18 } [get_ports miso_0];   		# MSCADCA   #회로도와 비교했을 때 miso와 mosi가 반대로 매칭되어 있어 수정
+set_property -dict { PACKAGE_PIN AC8	IOSTANDARD LVCMOS18 } [get_ports mosi_0];   		# MSCADCA
 set_property -dict { PACKAGE_PIN AE9	IOSTANDARD LVCMOS18 } [get_ports o_v_c_adc_cnv_0];	# MSTADCA
 
 # Current ADC
-set_property -dict { PACKAGE_PIN AC4	IOSTANDARD LVCMOS18 } [get_ports mosi_1];   		# MSDADC0B
+set_property -dict { PACKAGE_PIN AC4	IOSTANDARD LVCMOS18 } [get_ports miso_1];   		# MSDADC0B  #회로도와 비교했을 때 miso와 mosi가 반대로 매칭되어 있어 수정
 set_property -dict { PACKAGE_PIN AF6	IOSTANDARD LVCMOS18 } [get_ports i_c_adc_busy_0];  	# MBYADCB
 set_property -dict { PACKAGE_PIN AE7	IOSTANDARD LVCMOS18 } [get_ports n_cs_1];   		# MCSADCB~
 set_property -dict { PACKAGE_PIN AB7	IOSTANDARD LVCMOS18 } [get_ports spi_clk_1];   		# MSKADCB
-set_property -dict { PACKAGE_PIN AC7	IOSTANDARD LVCMOS18 } [get_ports miso_1];   		# MSCADCB
+set_property -dict { PACKAGE_PIN AC7	IOSTANDARD LVCMOS18 } [get_ports mosi_1];   		# MSCADCB   #회로도와 비교했을 때 miso와 mosi가 반대로 매칭되어 있어 수정
 set_property -dict { PACKAGE_PIN AD7	IOSTANDARD LVCMOS18 } [get_ports o_v_c_adc_cnv_1];	# MSTADCB
 
 # DC-Link ADC
 set_property -dict { PACKAGE_PIN J11	IOSTANDARD LVCMOS33 } [get_ports i_dc_adc_rvs_0];	# RVADCC
-set_property -dict { PACKAGE_PIN J10	IOSTANDARD LVCMOS33 } [get_ports mosi_2];			# SDADCC
+set_property -dict { PACKAGE_PIN J10	IOSTANDARD LVCMOS33 } [get_ports miso_2];			# SDADCC    #회로도와 비교했을 때 miso와 mosi가 반대로 매칭되어 있어 수정
 set_property -dict { PACKAGE_PIN K13	IOSTANDARD LVCMOS33 } [get_ports spi_clk_2];		# SKADCC
 set_property -dict { PACKAGE_PIN K12	IOSTANDARD LVCMOS33 } [get_ports o_dc_adc_cnv_0];	# CSADCC~
-set_property -dict { PACKAGE_PIN E12	IOSTANDARD LVCMOS33 } [get_ports miso_2];			# SCADCC
+set_property -dict { PACKAGE_PIN E12	IOSTANDARD LVCMOS33 } [get_ports mosi_2];			# SCADCC    #회로도와 비교했을 때 miso와 mosi가 반대로 매칭되어 있어 수정
 
 # ADC Reset
 set_property -dict { PACKAGE_PIN AG8	IOSTANDARD LVCMOS18 } [get_ports o_adc_ext_rst_0];	# MMRADCS~
@@ -256,7 +257,8 @@ set_property -dict { PACKAGE_PIN F6		IOSTANDARD LVCMOS18 } [get_ports i_intl_OH]
 
 # Interlock Reset
 set_property -dict { PACKAGE_PIN F8		IOSTANDARD LVCMOS18 } [get_ports i_sys_rst_flag];	# MONXRST~
-set_property -dict { PACKAGE_PIN F7		IOSTANDARD LVCMOS18 } [get_ports o_intl_OC_rst];	# MCL0CF
+# set_property -dict { PACKAGE_PIN F7		IOSTANDARD LVCMOS18 } [get_ports o_intl_OC_rst];	# MCL0CF    #이름이 잘못되어 있어 수정
+set_property -dict { PACKAGE_PIN F7		IOSTANDARD LVCMOS18 } [get_ports o_intl_OC_rst];	# MCLOCF~
 set_property -dict { PACKAGE_PIN E8		IOSTANDARD LVCMOS18 } [get_ports o_intl_POC_rst];	# MINOCMR
 
 # System Control
