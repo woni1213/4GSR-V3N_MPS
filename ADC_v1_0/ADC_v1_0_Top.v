@@ -203,16 +203,16 @@ module V3N_ADC_v1_0_Top #
 	(
 		// ADC DPBRAM Control
 		.o_v_c_adc_ram_cs(v_c_adc_s_ram_ce),
-		.o_v_c_adc_ram_w(),		// ?
-		.o_v_c_adc_ram_r(),		// ?
+		.o_v_c_adc_ram_w(),			// Not Used
+		.o_v_c_adc_ram_r(),			// Not Used
 
 		.o_dc_adc_ram_cs(o_dc_adc_s_ce),
-		.o_dc_adc_ram_w(),		// ?
-		.o_dc_adc_ram_r(),		// ?
+		.o_dc_adc_ram_w(),			// Not Used
+		.o_dc_adc_ram_r(),			// Not Used
 
 		// ADC DPBRAM Write Data
-		.o_v_c_adc_ram_wdata(),
-		.o_dc_adc_ram_wdata(),
+		.o_v_c_adc_ram_wdata(),		// Not Used
+		.o_dc_adc_ram_wdata(),		// Not Used
 
 		// ADC DPBRAM Address
 		.o_v_c_adc_ram_addr(v_c_adc_ram_addr),
@@ -286,7 +286,7 @@ module V3N_ADC_v1_0_Top #
 		.o_v_c_adc_ram_cs(v_c_adc_m_ram_ce),
 		.o_v_c_adc_ram_1_flag(v_c_adc_ram_1_flag),
 		.o_v_c_adc_ram_2_flag(v_c_adc_ram_2_flag),
-		.o_adc_data_valid(adc_data_valid),
+		.o_adc_data_valid(adc_data_valid),					// Valid를 1로 고정하였기 때문에 사용하지 않음
 
 		.o_debug_state(o_v_c_debug_state)
 	);
@@ -343,7 +343,6 @@ module V3N_ADC_v1_0_Top #
 	// Flag Assign
 	assign rst = s00_axi_aresetn & ~i_adc_ps_rst & ~o_adc_rst;
 	assign o_adc_ext_rst = rst;
-//	assign o_adc_data_valid = v_c_adc_m_ram_ce;
 
 	// Data Assign
 	// assign o_v_axis_tvalid = adc_data_valid;					//Custom IP - Xillinx IP를 BUS로 연결할 경우 valid와 ready 신호가 어긋나서 data가 전달되지 못하므로 주석 처리 후 1(high)로 고정

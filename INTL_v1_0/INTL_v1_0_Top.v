@@ -134,8 +134,8 @@ module INTL_v1_0_Top #
 	wire [31:0] v_intl_REGU_diff;
 	wire [31:0] v_intl_REGU_delay;
 
-	wire en_dsp_buf_ctrl;										//o_en_dsp_buf_ctrl을 not 시켜주기 위해 필요
-	wire SP601;													//o_SP601을 not 시켜주기 위해 필요
+	wire en_dsp_buf_ctrl;
+	wire SP601;
 
 	AXI4_Lite_S02 #
 	(
@@ -165,11 +165,9 @@ module INTL_v1_0_Top #
         
 		.o_en_dsp_boot(o_en_dsp_boot),
 		.o_sys_rst(o_sys_rst),
-		// .o_en_dsp_buf_ctrl(~o_en_dsp_buf_ctrl),					//AXI input에 상관없이 1로 고정돼서 en_dsp_buf_ctrl 추가하여 수정
 		.o_en_dsp_buf_ctrl(en_dsp_buf_ctrl),
 		.o_eeprom_rst(o_eeprom_rst),
 
-		// .o_SP601(~o_SP601),										//AXI input에 상관없이 1로 고정돼서 SP601 추가하여 수정
 		.o_SP601(SP601),
 		.o_SP1005(o_SP1005),
 		.o_SP1006(o_SP1006),
