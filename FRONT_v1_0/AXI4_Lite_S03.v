@@ -22,11 +22,11 @@ module AXI4_Lite_S03 #
 	parameter integer C_S_AXI_ADDR_WIDTH	= 0
 )
 (
-	output reg o_lcd_sw_start,
-	output reg o_sw_intr_clear,
+	output reg o_lcd_sw_start,			// LCD Switch SPI Start Flag
+	output reg o_sw_intr_clear,			// Interrupt Clear Flag
 	
-	input [1:0] i_ro_en_data,
-	input [7:0] i_sw_data,
+	input [1:0] i_ro_en_data,			// Rotary Encoder Data
+	input [7:0] i_sw_data,				// Interrupt Switch Data
 
 	output reg [23:0] o_dpbram_axi_data,
 	output reg [7:0] o_dpbram_axi_addr,

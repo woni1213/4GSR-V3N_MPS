@@ -10,7 +10,7 @@ MPS ROtary switch ENcorder Module
 이성진 차장의 퇴사로 인하여 MPS PL 프로그래밍
 
 0. 기타
- - 
+ - 동작 시방하게 되는데?
 
 1. 개요
  - 
@@ -30,10 +30,10 @@ module RO_EN
 );
 
 	parameter IDLE 	= 0;
-	parameter CW	= 1;
-	parameter CCW	= 2;
-	parameter LOW	= 3;
-	parameter HIGH	= 4;
+	parameter CW	= 1;	// a가 변화하면
+	parameter CCW	= 2;	// b가 변화하면
+	parameter LOW	= 3;	// 00
+	parameter HIGH	= 4;	// 11
 
 	// FSM
 	reg [2:0] state;

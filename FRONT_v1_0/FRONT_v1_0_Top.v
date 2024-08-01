@@ -30,12 +30,12 @@ module FRONT_v1_0_Top #
 	input [23:0] i_miso_data,	// SPI Module (o_miso_data)
 
 	// to Ext.Port
-	input i_sw_intr,
-	input i_ro_en_state_a,
+	input i_sw_intr,			// Interrupt
+	input i_ro_en_state_a,		// Rotary Encoder A
 	input i_ro_en_state_b,
 
-	output o_lcd_cs,
-	output o_sw_cs,
+	output o_lcd_cs,			// LCD SPI CS Output
+	output o_sw_cs,				// Switch SPI CS Output
 
 	// DPBRAM Single Clock (LCD Data) Bus Interface Ports Attribute (M : Write Only - AXI / S : Read Only - LCD)
 	(* X_INTERFACE_INFO = "HMT:JKW:s_dpbram_port:1.0 m_lcd_data_dpbram addr0" *) output [7:0] o_lcd_data_m_addr,
@@ -97,8 +97,8 @@ module FRONT_v1_0_Top #
 
 		.o_dpbram_axi_data(o_lcd_data_m_dout),
 		.o_dpbram_axi_addr(o_lcd_data_m_addr),
-		.o_dpbram_axi_ce(o_lcd_data_m_ce),
-		.o_dpbram_axi_we(o_lcd_data_m_we),
+		.o_dpbram_axi_ce(),
+		.o_dpbram_axi_we(),
 
 		.S_AXI_ACLK(s00_axi_aclk),
 		.S_AXI_ARESETN(s00_axi_aresetn),
@@ -163,5 +163,8 @@ module FRONT_v1_0_Top #
 	assign o_lcd_data_s_ce = 1;
 	assign o_lcd_data_s_we = 0;
 	assign o_lcd_data_s_dout = 0;
+	
+	assign o_lcd_data_m_ce = 1;
+	assign o_lcd_data_m_we = 1;
 
 endmodule

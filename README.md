@@ -1,5 +1,5 @@
 # 4GSR-V3N_MPS - INTerLock Module
-4GSR의 MPS V3N 제어기 중 Interlock 관련 모듈에 대한 설명이다.  
+4GSR의 MPS V3N 제어기의 Interlock 관련 모듈에 대한 설명이다.  
   
 기본적으로 ADC 모듈에서 보내주는 ADC 데이터 (16개의 ADC 데이터를 더한 값)를 기준으로 AXI4-Lite로 설정된 각종 값을 비교하여 Interlock을 설정 및 제어한다.  
 
@@ -77,3 +77,79 @@ Reset은 OSC와 동일하다.
  - eeprom_rst, en_dsp_buf_ctrl, sys_rst, en_dsp_boot 1011	11		: ADC 동작 안 함, i_intr 1(high)로 고정된 상태, i_DSP_clk 느려짐
  - eeprom_rst, en_dsp_buf_ctrl, sys_rst, en_dsp_boot 1101	13		: i_intr 1(high)로 고정된 상태
  - eeprom_rst, en_dsp_buf_ctrl, sys_rst, en_dsp_boot 0001	1		: 아무 변화 없음
+
+# 4GSR-V3N_MPS - FRONT Module
+4GSR의 MPS V3N 제어기의 Front Panel 관련 모듈에 대한 설명이다.  
+
+Front Panel은 OLED(LCD)와 Rotary Encoder, LED, Switch가 장착되어 있다. 
+
+### 1. OLED (LCD)
+ - NHD-0420CW-AB3
+ - 24 Bit SPI (Clock : 1 ~ 50 MHz / Clock Width : > 400ns / Delay : > 200ns / CPHA, CPOL : 11)
+ - Data Format : US2066.pdf 10page 참조 (데이터 진짜 이상하게 통신하니까 꼭 봐야함)
+ - Init 후 PS에서 RAM addr 4부터 쓴 데이터를 그대로 SPI로 전송함
+ - SPI 1st Byte : 0xF8 - Command / 0xFA - Data
+ - SPI 2, 3rd Byte : ASCII Code 역순으로 나눠서 보내야함
+ - ASCII Code : 데이터의 순서가 7654 3210 이라면 보낼때는 2nd : 01230000 3rd : 45670000으로 보내야함 (데이터시트 및 조민규 과장 참조)  
+
+### 2. Switch
+ - MCP23S17 (GPIO 8 Channel X 2)
+ - 24 Bit SPI (Clock : < 10MHz / Clock Width : > 45ns / Delay : > 50ns / CPHA, CPOL : 11)
+ - Switch Interrupt(~i_sw_intr)가 발생하면 FSM이 동작함. RAM addr 2, 3일 때 동작하며 2이면 LED, 3이면 Switch의 신호를 입력받는다.
+ - Init (PS)  
+ 1. 0x40000f : IODIRA (A Channel 0 ~ 3 Input Setup)
+ 2. 0x400100 : IODIRB (B Channel 0 ~ 7 Output Setup)
+ 3. 0x40040f : GPINTENA (A Channel 0 ~ 3 Interrupt Control Setup)
+ 4. 0x40060f : DEFVALA (A Channel 0 ~ 3 Interrupt 비교 값 Setup. 입력 값과 비교 값이 다르면 Interrupt 발생)
+ 5. 0x40080f : INTCONA (A Channel 0 ~ 3 DEFVAL 비트와 비교)
+ 6. 0x400c0f : GPPUA (A Channel 0 ~ 3 100KOhm Pullup Resistor Enable)  
+
+ - Read  
+ 1. RAM addr 3에 써줌
+ 2. 0x4112ff : GPIOA (A Channel Read)  
+
+### 3. LED
+ - RAM addr 2
+ - Write  
+ 1. RAM addr 2에 써줌
+ 2. 0x4013xx : GPIOB (B Channel Write), 테스트 필요
+
+### 4. Rotary Encoder
+ - Timing은 데이터시트 참조
+ - a,b 2개의 신호가 HH or LL일 때 FSM이 동작하며 a나 b의 상태가 바뀜으로 CW, CCW가 결정된다.
+
+### 5. RAM
+ - 24 Bit / 256 Len / Single Clock
+ - M : PS / S : PL
+ - 0 : IDLE
+ - 1 : SPI Data Length
+ - 2, 3 : LED, Switch
+ - 4 이상 : LCD SPI Data
+
+### 6. Block Design
+ - SPI IP는 1개를 사용하여 LCD와 SW 범용으로 사용한다.
+ - SPI의 CS는 FRONT_v1_0_Top.v에 assign으로 정의(o_lcd_cs, o_sw_cs)되어 있다.
+ - SPI, DPBRAM Parameter 설정해야함
+
+### 7. Test
+#### LCD Test
+- Init Test  
+전원을 인가한 후 LCD 화면을 확인한다.
+
+- LCD Test  
+모든 LCD 데이터는 RAM을 통해서 쓸 데이터를 저장한다. LCD에 쓸 데이터를 RAM 4번째 주소부터 작성한다. RAM의 데이터를 그대로 보내는 것에 유의해야한다. RAM에 저장이 완료가 되면 완료 신호(o_lcd_sw_start)를 보내고 난 후 Clear를 해준다.  
+
+#### LED / Switch Test
+- PS에서 Init  
+위의 항목 참조. 데이터는 2개씩 나눠서 보내야함 (addr : 2, 3이 LED, Switch임)  
+
+- LED Test  
+RAM의 addr에 LED데이터를 써준다. 데이터 포맷 등은 위의 LED 항목을 참조한다.
+
+- Switch Test  
+1. 스위치를 누르면 Interrupt(~i_sw_intr)가 발생한다. 
+2. Switch Data (sw_data)를 확인한다.
+3. Interrupt를 Clear(i_sw_intr_clear)한다.
+
+#### Rotary Switch Test
+1. Dial을 움직이며 o_ro_en_data를 확인한다.
