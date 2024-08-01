@@ -202,21 +202,6 @@ module DSP_v1_0_Top #
     wire [31:0] F_DSP_ADC_C;
     wire [31:0] F_DSP_ADC_V;
 
-	wire [8:0] xintf_PL_ram_addr;
-	wire xintf_PL_ram_ce;
-	wire xintf_PL_ram_we;
-	wire [15:0] xintf_PL_ram_din;
-	wire [15:0] xintf_PL_ram_dout;
-
-	wire [9:0] test_dpbram_addr;
-	wire test_dpbram_en;
-	wire test_dpbram_w_en;
-	wire test_dpbram_DSP_intr;
-	wire [15:0] test_dpbram_rdata;
-	wire [15:0] test_dpbram_wdata;
-
-	//wire DSP_intr;			//ㅅㅈ
-
 	AXI4_Lite_S01 #
 	(
 		.C_S_AXI_DATA_WIDTH(C_S_AXI_DATA_WIDTH),
@@ -239,12 +224,6 @@ module DSP_v1_0_Top #
 		.o_v_factor(o_v_factor_axis_tdata),
 		.o_Write_Index(Write_Index),
 		.o_Write_DATA(Write_DATA),
-
-		.o_test_dpbram_addr(test_dpbram_addr),
-		.o_test_dpbram_en(test_dpbram_en),
-		.o_test_dpbram_w_en(test_dpbram_w_en),
-		.o_test_dpbram_DSP_intr(test_dpbram_DSP_intr),
-		.o_test_dpbram_wdata(test_dpbram_wdata),
 
 		// Read (PL - PS)
 		.i_WF_INT_0(WF_INT_0),
@@ -292,8 +271,6 @@ module DSP_v1_0_Top #
 		.i_F_DSP_ADC_C(F_DSP_ADC_C),
 		.i_F_DSP_ADC_V(F_DSP_ADC_V),
 
-		.i_test_dpbram_rdata(test_dpbram_rdata),
-
 		.S_AXI_ACLK(s00_axi_aclk),
 		.S_AXI_ARESETN(s00_axi_aresetn),
 		.S_AXI_AWADDR(s00_axi_awaddr),
@@ -323,7 +300,7 @@ module DSP_v1_0_Top #
 		.i_clk(s00_axi_aclk),
 		.i_rst(s00_axi_aresetn),
 
-		.i_DSP_intr(DSP_intr),
+		.i_DSP_intr(i_DSP_intr),
 		.i_INTL_state(i_INTL_state),
 
 		.i_Write_Index(Write_Index),
@@ -331,11 +308,11 @@ module DSP_v1_0_Top #
 		.i_WF_dsp(WF_dsp),
 		.i_WF_data(i_WF_dsp_ram_dout),
 
-		.i_xintf_PL_ram_dout(xintf_PL_ram_dout),
-		.o_xintf_PL_ram_addr(xintf_PL_ram_addr),
-		.o_xintf_PL_ram_ce(xintf_PL_ram_ce),
-		.o_xintf_PL_ram_we(xintf_PL_ram_we),
-		.o_xintf_PL_ram_din(xintf_PL_ram_din),
+		.i_xintf_PL_ram_dout(i_xintf_PL_ram_dout),
+		.o_xintf_PL_ram_addr(o_xintf_PL_ram_addr),
+		.o_xintf_PL_ram_ce(o_xintf_PL_ram_ce),
+		.o_xintf_PL_ram_we(o_xintf_PL_ram_we),
+		.o_xintf_PL_ram_din(o_xintf_PL_ram_din),
 
 		.i_c_adc_data(i_c_adc_data),
 		.i_v_adc_data(i_v_adc_data),
@@ -414,14 +391,6 @@ assign o_xintf_DSP_ram_ce = ~i_nZ_B_CS;
 assign o_xintf_DSP_ram_we = ~i_nZ_B_WE;
 assign o_xintf_DSP_ram_din = io_Z_B_XD;
 assign io_Z_B_XD = (o_xintf_DSP_ram_we) ? 16'hZZZZ : i_xintf_DSP_ram_dout;
-
-// DPBRAM Test 용
-assign o_xintf_PL_ram_addr = 	(test_dpbram_en) ? test_dpbram_addr : xintf_PL_ram_addr;
-assign o_xintf_PL_ram_ce = 		(test_dpbram_en) ? 1 : xintf_PL_ram_ce;
-assign o_xintf_PL_ram_we = 		(test_dpbram_en) ? test_dpbram_w_en : xintf_PL_ram_we;
-assign o_xintf_PL_ram_din = 	(test_dpbram_en) ? test_dpbram_wdata : xintf_PL_ram_din;
-assign test_dpbram_rdata = 		i_xintf_PL_ram_dout;
-assign DSP_intr = 				test_dpbram_DSP_intr | i_DSP_intr;
 
 assign o_WF_PS_ram_addr = WF_addr;
 assign o_WF_PS_ram_ce = WF_BRAM_WE;
