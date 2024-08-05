@@ -25,7 +25,7 @@ module AXI4_Lite_S03 #
 	output reg o_lcd_sw_start,			// LCD Switch SPI Start Flag
 	output reg o_sw_intr_clear,			// Interrupt Clear Flag
 	
-	input [1:0] i_ro_en_data,			// Rotary Encoder Data
+	input [1:0] i_ro_enc_data,			// Rotary Encoder Data
 	input [7:0] i_sw_data,				// Interrupt Switch Data
 
 	output reg [23:0] o_dpbram_axi_data,
@@ -574,7 +574,7 @@ module AXI4_Lite_S03 #
 	always @(posedge S_AXI_ACLK)
     begin
 		slv_reg4[7:0]		<= i_sw_data;
-		slv_reg4[9:8]		<= i_ro_en_data;
+		slv_reg4[9:8]		<= i_ro_enc_data;
     end
 
 	// User logic ends

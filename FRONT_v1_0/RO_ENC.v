@@ -11,29 +11,40 @@ MPS ROtary switch ENcorder Module
 
 0. 기타
  - 동작 시방하게 되는데?
+	두칸씩 움직여야 한번 동작함
+	빠르게 돌리면 LCD 가끔 먹통됨
+ - 원인 판별 필요 (PS or PL?)
+ - 아마 PS가 원인일 확률이 매우 높음
+ - 만약 원인이 PL이거나 PS에서 사용하기 어렵다면 RO_ENC_Test.v로 적용하여 테스트
 
 1. 개요
  - 
 
+2. 동작
+ - a, b는 00 01 이런식으로 표기
+ - 멈춰있을때는 00 or 11로 대기함
+ - 한칸이 CW나 CCW로 동작 시 00 -> 01 or 10 -> 11로 변경됨
+ - 11부터 시작시에도 마찬가지
+
 */
 
-module RO_EN
+module RO_ENC
 (
 	input i_clk,
 	input i_rst,
 
-	input i_ro_en_state_a,
-	input i_ro_en_state_b,
+	input i_ro_enc_state_a,
+	input i_ro_enc_state_b,
 
 	input i_sw_intr_clear,
-	output [1:0] o_ro_en_data
+	output [1:0] o_ro_enc_data	
 );
 
 	parameter IDLE 	= 0;
-	parameter CW	= 1;	// a가 변화하면
-	parameter CCW	= 2;	// b가 변화하면
-	parameter LOW	= 3;	// 00
-	parameter HIGH	= 4;	// 11
+	parameter CW	= 1;	// o_ro_enc_data = 01, a가 먼저 변화하면
+	parameter CCW	= 2;	// o_ro_enc_data = 10, b가 먼저 변화하면
+	parameter LOW	= 3;	// o_ro_enc_data = 11, ab = 00
+	parameter HIGH	= 4;	// o_ro_enc_data = 00, ab = 11
 
 	// FSM
 	reg [2:0] state;
@@ -74,10 +85,10 @@ module RO_EN
 				if (i_sw_intr_clear)
 					n_state <= IDLE;
 
-                else if (i_ro_en_state_a)
+                else if (i_ro_enc_state_a)
                     n_state <= CW;
 
-				else if (i_ro_en_state_b)
+				else if (i_ro_enc_state_b)
 					n_state <= CCW;
 
                 else
@@ -89,10 +100,10 @@ module RO_EN
 				if (i_sw_intr_clear)
 					n_state <= IDLE;
 
-                else if (~i_ro_en_state_a)
+                else if (~i_ro_enc_state_a)
                     n_state <= CW;
 
-				else if (~i_ro_en_state_b)
+				else if (~i_ro_enc_state_b)
 					n_state <= CCW;
 
                 else
@@ -122,9 +133,9 @@ module RO_EN
 		endcase
 	end
 
-	assign low_state = ~(i_ro_en_state_a | i_ro_en_state_b);
-	assign high_state = i_ro_en_state_a & i_ro_en_state_b;
+	assign low_state = ~(i_ro_enc_state_a | i_ro_enc_state_b);
+	assign high_state = i_ro_enc_state_a & i_ro_enc_state_b;
 
-	assign o_ro_en_data = state[1:0];
+	assign o_ro_enc_data = state[1:0];
 
 endmodule
