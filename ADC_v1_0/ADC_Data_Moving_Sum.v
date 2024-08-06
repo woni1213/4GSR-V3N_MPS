@@ -5,6 +5,8 @@
 MPS ADC Module
 개발 4팀 전경원 차장
 
+24.05.08 :	최초 생성
+
 1. 개요
  총 16개의 ADC Data의 합산
  ADC 주기마다 Shift하여 연산함

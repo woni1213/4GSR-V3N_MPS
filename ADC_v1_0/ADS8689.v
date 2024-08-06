@@ -5,6 +5,14 @@
 MPS ADC Module
 개발 4팀 전경원 차장
 
+24.05.08 :	최초 생성
+
+24.08.06 :	always(*) 내 n_state가 cnv_start_flag에 의해서 Latch로 합성되어 FSM INIT State 추가
+			parameter -> localparam으로 변경
+
+이성진 차장의 퇴사로 인하여 MPS PL 프로그래밍
+
+
 1. Time
  - ADC Cycle				: 100 KHz
  - SCK Period				: > 14.9ns (50MHz / SPI IP T_CYCLE : 2)
@@ -43,13 +51,14 @@ module ADS8689 #
 	output [2:0] o_debug_state					// Debug Port
 );
 
-	parameter IDLE	= 0;
-	parameter BUSY	= 1;
-	parameter RVS	= 2;
-	parameter SPI	= 3;
-	parameter DONE	= 4;
+	localparam IDLE	= 0;
+	localparam BUSY	= 1;
+	localparam RVS	= 2;
+	localparam SPI	= 3;
+	localparam DONE	= 4;
+	localparam INIT = 7;
 
-	parameter ADC_CYCLE = 2000;
+	localparam ADC_CYCLE = 2000;
 
 	// FSM
 	reg [2:0] state;
@@ -67,7 +76,7 @@ module ADS8689 #
 	always @(posedge i_clk or negedge i_rst)
     begin
         if (~i_rst)
-            state <= IDLE;
+            state <= INIT;
 
         else 
             state <= n_state;
@@ -77,6 +86,9 @@ module ADS8689 #
 	always @(*)
     begin
         case (state)
+			INIT :
+	            n_state <= IDLE;
+
 			IDLE :
             begin
                 if (cnv_start_flag)
@@ -177,10 +189,10 @@ module ADS8689 #
 	always @(posedge i_clk or negedge i_rst) 
     begin
         if (~i_rst)
-            o_dc_adc_o_mosi_data <= 31'hd0140001;
+            o_dc_adc_o_mosi_data <= 32'hd0140001;
 		
 		else if (init_flag)
-			o_dc_adc_o_mosi_data <= 31'h00000000;
+			o_dc_adc_o_mosi_data <= 32'h00000000;
 
 		else
 			o_dc_adc_o_mosi_data <= o_dc_adc_o_mosi_data;

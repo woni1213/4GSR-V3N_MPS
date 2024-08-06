@@ -85,7 +85,7 @@ Front Panel은 OLED(LCD)와 Rotary Encoder, LED, Switch가 장착되어 있다.
 
 ### 1. OLED (LCD)
  - NHD-0420CW-AB3
- - 24 Bit SPI (Clock : 1 ~ 50 MHz / Clock Width : > 400ns / Delay : > 200ns / CPHA, CPOL : 11)
+ - 24 Bit SPI (Clock : < 1.2MHz / Clock Width : > 400ns / Delay : > 200ns / CPHA, CPOL : 11)
  - Data Format : US2066.pdf 10page 참조 (데이터 진짜 이상하게 통신하니까 꼭 봐야함)
  - Init 후 PS에서 RAM addr 4부터 쓴 데이터를 그대로 SPI로 전송함
  - SPI 1st Byte : 0xF8 - Command / 0xFA - Data

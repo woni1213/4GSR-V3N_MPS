@@ -7,6 +7,8 @@ MPS ADC Module
 
 24.05.08 :	최초 생성
 
+24.08.06 :	INTL용 ADC 출력 데이터 포트 추가
+
 이성진 차장의 퇴사로 인하여 MPS PL 프로그래밍
 
 0. 기타
@@ -54,7 +56,7 @@ MPS ADC Module
 
 */
 
-module V3N_ADC_v1_0_Top #
+module ADC_v1_0_Top #
 (
 	parameter integer C_S_AXI_DATA_WIDTH = 32,
 	parameter integer C_S_AXI_ADDR_WIDTH = 6,
@@ -108,6 +110,10 @@ module V3N_ADC_v1_0_Top #
 	// Floating-Point
 	output o_v_axis_tvalid,
 	output o_c_axis_tvalid,
+
+	// To INTL
+	output [31:0] o_v_adc_data,
+	output [31:0] o_c_adc_data,
 
 	// DPBRAM (Voltage) Bus Interface Ports Attribute
 	(* X_INTERFACE_INFO = "HMT:JKW:s_dpbram_port:1.0 m_v_dpbram addr0" *) output [$clog2(AD4030_RAM_DEPTH) - 1 : 0] o_v_adc_m_addr,
@@ -191,8 +197,11 @@ module V3N_ADC_v1_0_Top #
 	wire v_c_adc_s_ram_ce;
 
 	// Debug
-	wire [1:0] o_v_c_debug_state;
-	wire [2:0] o_dc_debug_state;
+	wire [1:0] v_c_debug_state;
+	wire [2:0] dc_debug_state;
+
+	wire [31:0] v_adc_data;
+	wire [31:0] c_adc_data;
 
 	AXI4_Lite_S00 #
 	(
@@ -235,8 +244,8 @@ module V3N_ADC_v1_0_Top #
 		.i_v_adc_i_miso_data(i_v_adc_i_miso_data),
 		.i_c_adc_i_miso_data(i_c_adc_i_miso_data),
 		.i_dc_adc_i_miso_data(i_dc_adc_i_miso_data[15:0]),
-		.i_v_c_debug_state(o_v_c_debug_state),
-		.i_dc_debug_state(o_dc_debug_state),
+		.i_v_c_debug_state(v_c_debug_state),
+		.i_dc_debug_state(dc_debug_state),
 
 		.rst(rst),
 		.i_adc_ps_rst(i_adc_ps_rst),
@@ -288,7 +297,7 @@ module V3N_ADC_v1_0_Top #
 		.o_v_c_adc_ram_2_flag(v_c_adc_ram_2_flag),
 		.o_adc_data_valid(adc_data_valid),					// Valid를 1로 고정하였기 때문에 사용하지 않음
 
-		.o_debug_state(o_v_c_debug_state)
+		.o_debug_state(v_c_debug_state)
 	);
 
 	ADS8689 #
@@ -313,7 +322,7 @@ module V3N_ADC_v1_0_Top #
 
 		.o_dc_adc_o_mosi_data(o_dc_adc_o_mosi_data),
 
-		.o_debug_state(o_dc_debug_state)
+		.o_debug_state(dc_debug_state)
 	);
 
 	ADC_Data_Moving_Sum
@@ -325,7 +334,7 @@ module V3N_ADC_v1_0_Top #
 		.i_adc_data(i_v_adc_i_miso_data),
 		.i_adc_valid(v_c_adc_m_ram_ce),
 
-		.o_adc_data(o_v_axis_tdata)
+		.o_adc_data(v_adc_data)
 	);
 
 	ADC_Data_Moving_Sum
@@ -337,7 +346,7 @@ module V3N_ADC_v1_0_Top #
 		.i_adc_data(i_c_adc_i_miso_data),
 		.i_adc_valid(v_c_adc_m_ram_ce),
 
-		.o_adc_data(o_c_axis_tdata)
+		.o_adc_data(c_adc_data)
 	);
 
 	// Flag Assign
@@ -373,4 +382,8 @@ module V3N_ADC_v1_0_Top #
 	assign o_c_adc_s_dout = 0;
 	assign o_dc_adc_s_dout = 0;
 
+	assign o_v_axis_tdata = v_adc_data;
+	assign o_c_axis_tdata = c_adc_data;
+	assign o_v_adc_data = v_adc_data;
+	assign o_c_adc_data = c_adc_data;
 endmodule
