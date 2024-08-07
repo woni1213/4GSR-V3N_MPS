@@ -1,5 +1,3 @@
-
-
 ##SFP
 set_property LOC Y10 [get_ports o_sfp_tx_disable[0]]
 set_property IOSTANDARD LVCMOS33 [get_ports o_sfp_tx_disable[0]]
@@ -161,7 +159,7 @@ set_property -dict { PACKAGE_PIN AD5	IOSTANDARD LVCMOS18 } [get_ports o_Hart_bea
 set_property -dict { PACKAGE_PIN D5		IOSTANDARD LVCMOS18 } [get_ports o_nMENPWM];		# MENPWM~
 
 # DSP Data Bus, Clock
-set_property -dict { PACKAGE_PIN AC12	IOSTANDARD LVCMOS33 } [get_ports i_CLK_DSP];		# i_CLK_DSP
+#set_property -dict { PACKAGE_PIN AC12	IOSTANDARD LVCMOS33 } [get_ports i_CLK_DSP];		# i_CLK_DSP
 set_property -dict { PACKAGE_PIN Y9		IOSTANDARD LVCMOS33 } [get_ports i_nZ_B_CS];		# i_nZ_B_CS
 set_property -dict { PACKAGE_PIN AB10	IOSTANDARD LVCMOS33 } [get_ports i_nZ_B_WE];		# i_nZ_B_WE
 
