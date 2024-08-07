@@ -1,4 +1,3 @@
-
 ##SFP
 set_property LOC Y10 [get_ports o_sfp_tx_disable[0]]
 set_property IOSTANDARD LVCMOS33 [get_ports o_sfp_tx_disable[0]]
@@ -122,29 +121,30 @@ set_property -dict { PACKAGE_PIN H11   IOSTANDARD LVCMOS33 } [get_ports { i_SFP_
 
 ### ADC_v1_0
 # Voltage ADC
-set_property -dict { PACKAGE_PIN AH8	IOSTANDARD LVCMOS18 } [get_ports miso_0];			# MSDADC0A
-set_property -dict { PACKAGE_PIN AE8	IOSTANDARD LVCMOS18 } [get_ports n_cs_0];   		# MCSADCA~
-set_property -dict { PACKAGE_PIN AB8	IOSTANDARD LVCMOS18 } [get_ports spi_clk_0];   		# MSKADCA
-set_property -dict { PACKAGE_PIN AC8	IOSTANDARD LVCMOS18 } [get_ports mosi_0];   		# MSCADCA
-set_property -dict { PACKAGE_PIN AE9	IOSTANDARD LVCMOS18 } [get_ports o_v_c_adc_cnv_0];	# MSTADCA
+set_property -dict { PACKAGE_PIN AH8	IOSTANDARD LVCMOS18 } [get_ports v_adc_spi_miso];	# MSDADC0A
+set_property -dict { PACKAGE_PIN AF7	IOSTANDARD LVCMOS18 } [get_ports i_v_adc_busy];		# MBYADCA
+set_property -dict { PACKAGE_PIN AE8	IOSTANDARD LVCMOS18 } [get_ports v_adc_spi_n_cs];	# MCSADCA~
+set_property -dict { PACKAGE_PIN AB8	IOSTANDARD LVCMOS18 } [get_ports v_adc_spi_clk];	# MSKADCA
+set_property -dict { PACKAGE_PIN AC8	IOSTANDARD LVCMOS18 } [get_ports v_adc_spi_mosi];	# MSCADCA
+set_property -dict { PACKAGE_PIN AE9	IOSTANDARD LVCMOS18 } [get_ports o_v_adc_cnv];		# MSTADCA
 
 # Current ADC
-set_property -dict { PACKAGE_PIN AC4	IOSTANDARD LVCMOS18 } [get_ports miso_1];   		# MSDADC0B
-set_property -dict { PACKAGE_PIN AF6	IOSTANDARD LVCMOS18 } [get_ports i_c_adc_busy_0];  	# MBYADCB
-set_property -dict { PACKAGE_PIN AE7	IOSTANDARD LVCMOS18 } [get_ports n_cs_1];   		# MCSADCB~
-set_property -dict { PACKAGE_PIN AB7	IOSTANDARD LVCMOS18 } [get_ports spi_clk_1];   		# MSKADCB
-set_property -dict { PACKAGE_PIN AC7	IOSTANDARD LVCMOS18 } [get_ports mosi_1];   		# MSCADCB
-set_property -dict { PACKAGE_PIN AD7	IOSTANDARD LVCMOS18 } [get_ports o_v_c_adc_cnv_1];	# MSTADCB
+set_property -dict { PACKAGE_PIN AC4	IOSTANDARD LVCMOS18 } [get_ports c_adc_spi_miso];	# MSDADC0B
+set_property -dict { PACKAGE_PIN AF6	IOSTANDARD LVCMOS18 } [get_ports i_c_adc_busy];  	# MBYADCB
+set_property -dict { PACKAGE_PIN AE7	IOSTANDARD LVCMOS18 } [get_ports c_adc_spi_n_cs];	# MCSADCB~
+set_property -dict { PACKAGE_PIN AB7	IOSTANDARD LVCMOS18 } [get_ports c_adc_spi_clk];	# MSKADCB
+set_property -dict { PACKAGE_PIN AC7	IOSTANDARD LVCMOS18 } [get_ports c_adc_spi_mosi];	# MSCADCB
+set_property -dict { PACKAGE_PIN AD7	IOSTANDARD LVCMOS18 } [get_ports o_c_adc_cnv];		# MSTADCB
 
 # DC-Link ADC
-set_property -dict { PACKAGE_PIN J11	IOSTANDARD LVCMOS33 } [get_ports i_dc_adc_rvs_0];	# RVADCC
-set_property -dict { PACKAGE_PIN J10	IOSTANDARD LVCMOS33 } [get_ports miso_2];			# SDADCC
-set_property -dict { PACKAGE_PIN K13	IOSTANDARD LVCMOS33 } [get_ports spi_clk_2];		# SKADCC
-set_property -dict { PACKAGE_PIN K12	IOSTANDARD LVCMOS33 } [get_ports o_dc_adc_cnv_0];	# CSADCC~
-set_property -dict { PACKAGE_PIN E12	IOSTANDARD LVCMOS33 } [get_ports mosi_2];			# SCADCC
+set_property -dict { PACKAGE_PIN J11	IOSTANDARD LVCMOS33 } [get_ports i_dc_adc_rvs];		# RVADCC
+set_property -dict { PACKAGE_PIN J10	IOSTANDARD LVCMOS33 } [get_ports dc_adc_spi_miso];	# SDADCC
+set_property -dict { PACKAGE_PIN K13	IOSTANDARD LVCMOS33 } [get_ports dc_adc_spi_clk];	# SKADCC
+set_property -dict { PACKAGE_PIN K12	IOSTANDARD LVCMOS33 } [get_ports o_dc_adc_cnv];		# CSADCC~
+set_property -dict { PACKAGE_PIN E12	IOSTANDARD LVCMOS33 } [get_ports dc_adc_spi_mosi];	# SCADCC
 
 # ADC Reset
-set_property -dict { PACKAGE_PIN AG8	IOSTANDARD LVCMOS18 } [get_ports o_adc_ext_rst_0];	# MMRADCS~
+set_property -dict { PACKAGE_PIN AG8	IOSTANDARD LVCMOS18 } [get_ports o_adc_ext_rst];	# MMRADCS~
 
 ### DSP_v1_0
 # DSP Handshake
@@ -159,7 +159,7 @@ set_property -dict { PACKAGE_PIN AD5	IOSTANDARD LVCMOS18 } [get_ports o_Hart_bea
 set_property -dict { PACKAGE_PIN D5		IOSTANDARD LVCMOS18 } [get_ports o_nMENPWM];		# MENPWM~
 
 # DSP Data Bus, Clock
-set_property -dict { PACKAGE_PIN AC12	IOSTANDARD LVCMOS33 } [get_ports i_CLK_DSP];		# i_CLK_DSP
+#set_property -dict { PACKAGE_PIN AC12	IOSTANDARD LVCMOS33 } [get_ports i_CLK_DSP];		# i_CLK_DSP
 set_property -dict { PACKAGE_PIN Y9		IOSTANDARD LVCMOS33 } [get_ports i_nZ_B_CS];		# i_nZ_B_CS
 set_property -dict { PACKAGE_PIN AB10	IOSTANDARD LVCMOS33 } [get_ports i_nZ_B_WE];		# i_nZ_B_WE
 
@@ -193,20 +193,20 @@ set_property -dict { PACKAGE_PIN AA12	IOSTANDARD LVCMOS33 } [get_ports i_Z_B_XA[
 set_property -dict { PACKAGE_PIN AA11	IOSTANDARD LVCMOS33 } [get_ports i_Z_B_XA[8]];		# i_Z_B_XA [8]
 
 # External Interlock
-set_property -dict { PACKAGE_PIN AD11	IOSTANDARD LVCMOS33 } [get_ports o_ext_IL1];		# NILKO1~
-set_property -dict { PACKAGE_PIN AD10	IOSTANDARD LVCMOS33 } [get_ports o_ext_IL2];		# NILKO2~
-set_property -dict { PACKAGE_PIN AD12	IOSTANDARD LVCMOS33 } [get_ports o_ext_IL3];		# NILKO3~
-set_property -dict { PACKAGE_PIN AE10	IOSTANDARD LVCMOS33 } [get_ports o_ext_IL4];		# NILKO4~
+set_property -dict { PACKAGE_PIN AD11	IOSTANDARD LVCMOS33 } [get_ports o_intl_ext1];		# NILKO1~
+set_property -dict { PACKAGE_PIN AD10	IOSTANDARD LVCMOS33 } [get_ports o_intl_ext2];		# NILKO2~
+set_property -dict { PACKAGE_PIN AD12	IOSTANDARD LVCMOS33 } [get_ports o_intl_ext3];		# NILKO3~
+set_property -dict { PACKAGE_PIN AE10	IOSTANDARD LVCMOS33 } [get_ports o_intl_ext4];		# NILKO4~
 
-set_property -dict { PACKAGE_PIN G1		IOSTANDARD LVCMOS18 } [get_ports i_ext_IL1];		# MILKI1
-set_property -dict { PACKAGE_PIN C4		IOSTANDARD LVCMOS18 } [get_ports i_ext_IL2];		# MILKI2
-set_property -dict { PACKAGE_PIN K8		IOSTANDARD LVCMOS18 } [get_ports i_ext_IL3];		# MILKI3
-set_property -dict { PACKAGE_PIN K7		IOSTANDARD LVCMOS18 } [get_ports i_ext_IL4];		# MILKI4
+set_property -dict { PACKAGE_PIN G1		IOSTANDARD LVCMOS18 } [get_ports i_intl_ext1];		# MILKI1
+set_property -dict { PACKAGE_PIN C4		IOSTANDARD LVCMOS18 } [get_ports i_intl_ext2];		# MILKI2
+set_property -dict { PACKAGE_PIN K8		IOSTANDARD LVCMOS18 } [get_ports i_intl_ext3];		# MILKI3
+set_property -dict { PACKAGE_PIN K7		IOSTANDARD LVCMOS18 } [get_ports i_intl_ext4];		# MILKI4
 
-set_property UNAVAILABLE_DURING_CALIBRATION TRUE [get_ports i_ext_IL1];
-set_property UNAVAILABLE_DURING_CALIBRATION TRUE [get_ports i_ext_IL2];
-set_property UNAVAILABLE_DURING_CALIBRATION TRUE [get_ports i_ext_IL3];
-set_property UNAVAILABLE_DURING_CALIBRATION TRUE [get_ports i_ext_IL4];
+set_property UNAVAILABLE_DURING_CALIBRATION TRUE [get_ports i_intl_ext1];
+set_property UNAVAILABLE_DURING_CALIBRATION TRUE [get_ports i_intl_ext2];
+set_property UNAVAILABLE_DURING_CALIBRATION TRUE [get_ports i_intl_ext3];
+set_property UNAVAILABLE_DURING_CALIBRATION TRUE [get_ports i_intl_ext4];
 
 # Interlock
 set_property -dict { PACKAGE_PIN D7		IOSTANDARD LVCMOS18 } [get_ports i_intl_POC];		# MINOCF
@@ -234,11 +234,11 @@ set_property -dict { PACKAGE_PIN AC9	IOSTANDARD LVCMOS18 } [get_ports i_SP1010];
 set_property -dict { PACKAGE_PIN AD9	IOSTANDARD LVCMOS18 } [get_ports i_SP1011];			# SP1011
 
 # FRONT
-set_property -dict { PACKAGE_PIN AE12   IOSTANDARD LVCMOS33 } [get_ports spi_clk_3];		# SKSPI
+set_property -dict { PACKAGE_PIN AE12   IOSTANDARD LVCMOS33 } [get_ports front_sw_spi_clk];	# SKSPI
 set_property -dict { PACKAGE_PIN AF12   IOSTANDARD LVCMOS33 } [get_ports o_lcd_cs];			# nCSODM  
 set_property -dict { PACKAGE_PIN AG10   IOSTANDARD LVCMOS33 } [get_ports o_sw_cs];			# nCSIOE
-set_property -dict { PACKAGE_PIN AH10   IOSTANDARD LVCMOS33 } [get_ports mosi_3];			# SCSPI
-set_property -dict { PACKAGE_PIN AF11   IOSTANDARD LVCMOS33 } [get_ports miso_3];			# SDSPI
+set_property -dict { PACKAGE_PIN AH10   IOSTANDARD LVCMOS33 } [get_ports front_sw_spi_mosi];# SCSPI
+set_property -dict { PACKAGE_PIN AF11   IOSTANDARD LVCMOS33 } [get_ports front_sw_spi_miso];# SDSPI
 set_property -dict { PACKAGE_PIN AG11   IOSTANDARD LVCMOS33 } [get_ports i_sw_intr];		# nINTKY
-set_property -dict { PACKAGE_PIN AH12   IOSTANDARD LVCMOS33 } [get_ports i_ro_en_state_a];	# ENCKYA
-set_property -dict { PACKAGE_PIN AH11   IOSTANDARD LVCMOS33 } [get_ports i_ro_en_state_b];	# ENCKYB
+set_property -dict { PACKAGE_PIN AH12   IOSTANDARD LVCMOS33 } [get_ports i_ro_enc_state_a];	# ENCKYA
+set_property -dict { PACKAGE_PIN AH11   IOSTANDARD LVCMOS33 } [get_ports i_ro_enc_state_b];	# ENCKYB

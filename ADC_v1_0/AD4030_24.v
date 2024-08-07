@@ -5,6 +5,10 @@
 MPS ADC Module
 개발 4팀 전경원 차장
 
+24.05.08 :	최초 생성
+
+24.08.06 :	parameter -> localparam으로 변경
+
 1. Time
  - ADC Cycle			: 1 MHz
  - SCK Period			: > 12.3ns (50MHz / SPI IP T_CYCLE : 2)
@@ -45,12 +49,12 @@ module AD4030_24 #
 	output [1:0] o_debug_state
 );
 
-	parameter IDLE	= 0;
-	parameter BUSY	= 1;
-	parameter SPI	= 2;
-	parameter DONE	= 3;
+	localparam IDLE	= 0;
+	localparam BUSY	= 1;
+	localparam SPI	= 2;
+	localparam DONE	= 3;
 
-	parameter ADC_CYCLE = 200;
+	localparam ADC_CYCLE = 200;
 
 	// FSM
 	reg [1:0] state;

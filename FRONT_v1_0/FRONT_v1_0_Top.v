@@ -31,8 +31,8 @@ module FRONT_v1_0_Top #
 
 	// to Ext.Port
 	input i_sw_intr,			// Interrupt
-	input i_ro_en_state_a,		// Rotary Encoder A
-	input i_ro_en_state_b,
+	input i_ro_enc_state_a,		// Rotary Encoder A
+	input i_ro_enc_state_b,
 
 	output o_lcd_cs,			// LCD SPI CS Output
 	output o_sw_cs,				// Switch SPI CS Output
@@ -78,7 +78,7 @@ module FRONT_v1_0_Top #
 	wire sw_intr_clear;
 	wire [7:0] sw_data;
 
-	wire [1:0] ro_en_data;
+	wire [1:0] ro_enc_data;
 
 	wire lcd_sw_cs;
 
@@ -92,7 +92,7 @@ module FRONT_v1_0_Top #
 		.o_lcd_sw_start(lcd_sw_start),
 		.o_sw_intr_clear(sw_intr_clear),
 
-		.i_ro_en_data(ro_en_data),
+		.i_ro_enc_data(ro_enc_data),
 		.i_sw_data(sw_data),
 
 		.o_dpbram_axi_data(o_lcd_data_m_dout),
@@ -144,17 +144,17 @@ module FRONT_v1_0_Top #
 		.o_lcd_sw_cs(lcd_sw_cs)
 	);
 
-	RO_EN
-	u_RO_EN
+	RO_ENC
+	u_RO_ENC
 	(
 		.i_clk(s00_axi_aclk),
 		.i_rst(s00_axi_aresetn),
 
-		.i_ro_en_state_a(i_ro_en_state_a),
-		.i_ro_en_state_b(i_ro_en_state_b),
+		.i_ro_enc_state_a(i_ro_enc_state_a),
+		.i_ro_enc_state_b(i_ro_enc_state_b),
 
 		.i_sw_intr_clear(sw_intr_clear),
-		.o_ro_en_data(ro_en_data)
+		.o_ro_enc_data(ro_enc_data)
 	);
 
 	assign o_lcd_cs = ~(lcd_sw_cs) ? i_spi_cs : 1;
