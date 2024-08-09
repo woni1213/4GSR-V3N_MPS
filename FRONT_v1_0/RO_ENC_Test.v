@@ -74,13 +74,13 @@ module RO_ENC
 			o_ro_enc_data <= 0;
 		end
 
-		else if ((ab_state == 4'b0001) || (ab_state == 4'b1110))
+		else if ((ab_state == 4'b0010) || (ab_state == 4'b1101))
 		begin
 			o_ro_enc_dir <= 0;
 			o_ro_enc_data <= o_ro_enc_data + 1;
 		end
 
-		else if ((ab_state == 4'b0010) || (ab_state == 4'b1101))
+		else if ((ab_state == 4'b0001) || (ab_state == 4'b1110))
 		begin
 			o_ro_enc_dir <= 1;
 			o_ro_enc_data <= o_ro_enc_data + 1;
