@@ -124,10 +124,10 @@ module INTL
 	// REGulation (REGU)
 	input i_intl_REGU_mode,						// Output Mode (0 : C.C or 1 : C.V)
 	input i_intl_REGU_bypass,
-	input i_c_intl_REGU_sp_flag,					// Output Set Flag (REGU Start)
+	input i_c_intl_REGU_sp_flag,				// Output Set Flag (REGU Start)
 	input i_v_intl_REGU_sp_flag,
 	input [31:0] i_c_intl_REGU_sp,				// Output Set Value
-	input [31:0] i_c_intl_REGU_diff,				// Regulation Differential Threashold
+	input [31:0] i_c_intl_REGU_diff,			// Regulation Differential Threashold
 	input [31:0] i_c_intl_REGU_delay,			// Regulation Delay Time
 	input [31:0] i_v_intl_REGU_sp,
 	input [31:0] i_v_intl_REGU_diff,
@@ -336,18 +336,14 @@ module INTL
 	// OSC ADC Data Min Calc
 	always @(posedge i_clk or negedge i_rst) 
 	begin
-		// if (~i_rst || (OSC_state == OSC_IDLE) || (OSC_state == OSC_RESET))			//Synth 8-5413 Critical Warning이 발생하여 수정 (조건이 ~i_rst와 함께 3개 이상일 때 발생하는 것으로 예상)
-			// c_intl_OSC_adc_min <= 0;													//0보다 작은 값은 없으므로 비교가 되지 않아 수정 중
-		if (~i_rst)																		//해당 조건에서 c_intl_OSC_adc_min <= c_adc_sbc_raw_data;를 할 경우
-			c_intl_OSC_adc_min <= 0;													
+		if (~i_rst)
+			c_intl_OSC_adc_min <= 0;
 
 		else if ((OSC_state == OSC_IDLE) || (OSC_state == OSC_RESET))
-			c_intl_OSC_adc_min <= c_adc_sbc_raw_data;									//Netlist 29-358 Critical Warning이 발생하므로 수정
+			c_intl_OSC_adc_min <= c_adc_sbc_raw_data;
 
 		else if (OSC_state == OSC_RUN)
 		begin
-			// if (c_intl_OSC_adc_min < c_adc_sbc_raw_data)								//c_intl_OSC_adc_max와 같은 값이 나오므로 수정
-			// 	c_intl_OSC_adc_min <= c_adc_sbc_raw_data;
 			if (c_adc_sbc_raw_data < c_intl_OSC_adc_min)
 				c_intl_OSC_adc_min <= c_adc_sbc_raw_data;
 			
@@ -362,11 +358,11 @@ module INTL
 	// OSC ADC Data Max Calc
 	always @(posedge i_clk or negedge i_rst) 
 	begin
-    	if (~i_rst)																		//Synth 8-5413 에러가 발생하여 수정 (조건이 ~i_rst와 함께 3개 이상일 때 발생하는 것으로 예상)
-			c_intl_OSC_adc_max <= 0;													//c_intl_OSC_adc_min과 맞춰주기 위해 수정 중 해당 조건에서 c_intl_OSC_adc_max <= c_adc_sbc_raw_data;를 할 경우
+    	if (~i_rst)
+			c_intl_OSC_adc_max <= 0;
 
 		else if ((OSC_state == OSC_IDLE) || (OSC_state == OSC_RESET))
-			c_intl_OSC_adc_max <= c_adc_sbc_raw_data;									//Netlist 29-358 Critical Warning이 발생하므로 수정
+			c_intl_OSC_adc_max <= c_adc_sbc_raw_data;
 
 		else if (OSC_state == OSC_RUN)
 		begin
@@ -421,15 +417,15 @@ module INTL
 	// OSC ADC Data Min Calc
 	always @(posedge i_clk or negedge i_rst) 
 	begin
-		if (~i_rst)																		//0보다 작은 값은 없으므로 비교가 되지 않아 수정 중 해당 조건에서 v_intl_OSC_adc_min <= v_adc_sbc_raw_data;를 할 경우
-			v_intl_OSC_adc_min <= 0;													
+		if (~i_rst)
+			v_intl_OSC_adc_min <= 0;
 
 		else if ((OSC_state == OSC_IDLE) || (OSC_state == OSC_RESET))
-			v_intl_OSC_adc_min <= v_adc_sbc_raw_data;									//Netlist 29-358 Critical Warning이 발생하므로 수정
+			v_intl_OSC_adc_min <= v_adc_sbc_raw_data;
 
 		else if (OSC_state == OSC_RUN)
 		begin
-			if (v_adc_sbc_raw_data < v_intl_OSC_adc_min)								//v_intl_OSC_adc_max와 같은 값이 나오므로 수정
+			if (v_adc_sbc_raw_data < v_intl_OSC_adc_min)
 				v_intl_OSC_adc_min <= v_adc_sbc_raw_data;
 			
 			else
@@ -443,11 +439,11 @@ module INTL
 	// OSC ADC Data Max Calc
 	always @(posedge i_clk or negedge i_rst) 
 	begin
-    	if (~i_rst)																		//Synth 8-5413 에러가 발생하여 수정 (조건이 ~i_rst와 함께 3개 이상일 때 발생하는 것으로 예상)
-			v_intl_OSC_adc_max <= 0;													//v_intl_OSC_adc_min과 맞춰주기 위해 수정 중 해당 조건에서 v_intl_OSC_adc_max <= v_adc_sbc_raw_data;를 할 경우
+    	if (~i_rst)
+			v_intl_OSC_adc_max <= 0;
 
 		else if ((OSC_state == OSC_IDLE) || (OSC_state == OSC_RESET))
-			v_intl_OSC_adc_max <= v_adc_sbc_raw_data;									//Netlist 29-358 Critical Warning이 발생하므로 수정
+			v_intl_OSC_adc_max <= v_adc_sbc_raw_data;
 
 		else if (OSC_state == OSC_RUN)
 		begin
@@ -494,7 +490,6 @@ module INTL
 			v_intl_OSC <= 1;
 
 		else
-			// v_intl_OSC <= c_intl_OSC;													//REGU 매칭이 잘못되어 수정
 			v_intl_OSC <= v_intl_OSC;
 	end
 
