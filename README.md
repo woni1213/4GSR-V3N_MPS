@@ -145,11 +145,27 @@ Front Panel은 OLED(LCD)와 Rotary Encoder, LED, Switch가 장착되어 있다.
 
 - LED Test  
 RAM의 addr에 LED데이터를 써준다. 데이터 포맷 등은 위의 LED 항목을 참조한다.
+1. Test 결과
+    - 0x401300 + xxxx x1xx (LD301 ON)
+    - 0x401300 + xxxx 1xxx (LD302 ON)
+    - 0x401300 + xxx1 xxxx (LD303 ON)
+    - 0x401300 + xx1x xxxx (LD304 ON)
+    - 0x401300 + x1xx xxxx (LD305 ON)
+    - 0x401300 + 1xxx xxxx (LD306 ON)
 
 - Switch Test  
 1. 스위치를 누르면 Interrupt(~i_sw_intr)가 발생한다. 
 2. Switch Data (sw_data)를 확인한다.
 3. Interrupt를 Clear(i_sw_intr_clear)한다.
+4. Test 결과
+    - 14 : K201
+    - 13 : K202
+    - 12 : K201, K202
+    - 11 : K203
+    - 10 : K201, K203
+    - 9  : K202, K203
+    - 8  : K201, K202, K203
 
 #### Rotary Switch Test
 1. Dial을 움직이며 o_ro_en_data를 확인한다.
+2. Test 시 RO_ENC.v 보다는 RO_ENC_test.v가 움직임 감지에 더 효과적이다.

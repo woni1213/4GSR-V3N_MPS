@@ -37,6 +37,9 @@ module FRONT_v1_0_Top #
 	output o_lcd_cs,			// LCD SPI CS Output
 	output o_sw_cs,				// Switch SPI CS Output
 
+	// to IRQ
+	output o_ro_enc_irq,		// Rotary Switch IRQ (필요시 IRQ에 연결)
+
 	// DPBRAM Single Clock (LCD Data) Bus Interface Ports Attribute (M : Write Only - AXI / S : Read Only - LCD)
 	(* X_INTERFACE_INFO = "HMT:JKW:s_dpbram_port:1.0 m_lcd_data_dpbram addr0" *) output [7:0] o_lcd_data_m_addr,
 	(* X_INTERFACE_INFO = "HMT:JKW:s_dpbram_port:1.0 m_lcd_data_dpbram ce0" *) output o_lcd_data_m_ce,
@@ -78,7 +81,8 @@ module FRONT_v1_0_Top #
 	wire sw_intr_clear;
 	wire [7:0] sw_data;
 
-	wire [1:0] ro_enc_data;
+	wire ro_enc_dir;
+	wire [4:0] ro_enc_data;
 
 	wire lcd_sw_cs;
 
@@ -94,6 +98,8 @@ module FRONT_v1_0_Top #
 
 		.i_ro_enc_data(ro_enc_data),
 		.i_sw_data(sw_data),
+
+		.i_ro_enc_dir(ro_enc_dir),
 
 		.o_dpbram_axi_data(o_lcd_data_m_dout),
 		.o_dpbram_axi_addr(o_lcd_data_m_addr),
@@ -154,6 +160,8 @@ module FRONT_v1_0_Top #
 		.i_ro_enc_state_b(i_ro_enc_state_b),
 
 		.i_sw_intr_clear(sw_intr_clear),
+		.o_ro_enc_irq(o_ro_enc_irq),
+		.o_ro_enc_dir(ro_enc_dir),					// // 0 : CW, 1 : CCW
 		.o_ro_enc_data(ro_enc_data)
 	);
 

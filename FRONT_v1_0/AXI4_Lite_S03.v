@@ -25,8 +25,10 @@ module AXI4_Lite_S03 #
 	output reg o_lcd_sw_start,			// LCD Switch SPI Start Flag
 	output reg o_sw_intr_clear,			// Interrupt Clear Flag
 	
-	input [1:0] i_ro_enc_data,			// Rotary Encoder Data
+	input [4:0] i_ro_enc_data,			// Rotary Encoder Data
 	input [7:0] i_sw_data,				// Interrupt Switch Data
+
+	input i_ro_enc_dir,					// Rotary Encoder Direction
 
 	output reg [23:0] o_dpbram_axi_data,
 	output reg [7:0] o_dpbram_axi_addr,
@@ -254,8 +256,8 @@ module AXI4_Lite_S03 #
 	      slv_reg2 <= 0;
 	      slv_reg3 <= 0;
 	    //   slv_reg4 <= 0;
-	      slv_reg5 <= 0;
-          slv_reg6 <= 0;
+	    //   slv_reg5 <= 0;
+        //   slv_reg6 <= 0;
 	      slv_reg7 <= 0;
 	      slv_reg8 <= 0;
 	      slv_reg9 <= 0;
@@ -311,21 +313,21 @@ module AXI4_Lite_S03 #
 	        //         slv_reg4[(byte_index*8) +: 8] <= S_AXI_WDATA[(byte_index*8) +: 8];
 	        //       end
 
-			4'h5:
-	            for ( byte_index = 0; byte_index <= (C_S_AXI_DATA_WIDTH/8)-1; byte_index = byte_index+1 )
-	              if ( S_AXI_WSTRB[byte_index] == 1 ) begin
-	                // Respective byte enables are asserted as per write strobes 
-	                // Slave register 5
-	                slv_reg5[(byte_index*8) +: 8] <= S_AXI_WDATA[(byte_index*8) +: 8];
-	              end
+			// 4'h5:
+	        //     for ( byte_index = 0; byte_index <= (C_S_AXI_DATA_WIDTH/8)-1; byte_index = byte_index+1 )
+	        //       if ( S_AXI_WSTRB[byte_index] == 1 ) begin
+	        //         // Respective byte enables are asserted as per write strobes 
+	        //         // Slave register 5
+	        //         slv_reg5[(byte_index*8) +: 8] <= S_AXI_WDATA[(byte_index*8) +: 8];
+	        //       end
 
-			  4'h6:
-	            for ( byte_index = 0; byte_index <= (C_S_AXI_DATA_WIDTH/8)-1; byte_index = byte_index+1 )
-	              if ( S_AXI_WSTRB[byte_index] == 1 ) begin
-	                // Respective byte enables are asserted as per write strobes 
-	                // Slave register 5
-	                slv_reg6[(byte_index*8) +: 8] <= S_AXI_WDATA[(byte_index*8) +: 8];
-	              end
+			//   4'h6:
+	        //     for ( byte_index = 0; byte_index <= (C_S_AXI_DATA_WIDTH/8)-1; byte_index = byte_index+1 )
+	        //       if ( S_AXI_WSTRB[byte_index] == 1 ) begin
+	        //         // Respective byte enables are asserted as per write strobes 
+	        //         // Slave register 5
+	        //         slv_reg6[(byte_index*8) +: 8] <= S_AXI_WDATA[(byte_index*8) +: 8];
+	        //       end
 
               4'h7:
 	            for ( byte_index = 0; byte_index <= (C_S_AXI_DATA_WIDTH/8)-1; byte_index = byte_index+1 )
@@ -398,8 +400,8 @@ module AXI4_Lite_S03 #
 	                      slv_reg2 <= slv_reg2;
 	                      slv_reg3 <= slv_reg3;
 	                    //   slv_reg4 <= slv_reg4;
-	                      slv_reg5 <= slv_reg5;
-                          slv_reg6 <= slv_reg6;
+	                    //   slv_reg5 <= slv_reg5;
+                        //   slv_reg6 <= slv_reg6;
 	                      slv_reg7 <= slv_reg7;
 	                      slv_reg8 <= slv_reg8;
 	                      slv_reg9 <= slv_reg9;
@@ -574,7 +576,8 @@ module AXI4_Lite_S03 #
 	always @(posedge S_AXI_ACLK)
     begin
 		slv_reg4[7:0]		<= i_sw_data;
-		slv_reg4[9:8]		<= i_ro_enc_data;
+		slv_reg5[4:0]		<= i_ro_enc_data;
+		slv_reg6[0]			<= i_ro_enc_dir;
     end
 
 	// User logic ends
