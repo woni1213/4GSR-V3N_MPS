@@ -51,7 +51,7 @@ MPS DSP Module
 
 */
 
-module DSP_v1_0_Top #
+module DSP_Current_Factor_v1_0_Top #
 (
 	parameter integer C_S_AXI_DATA_WIDTH = 32,
 	parameter integer C_S_AXI_ADDR_WIDTH = 8

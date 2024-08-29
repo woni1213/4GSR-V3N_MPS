@@ -1,80 +1,14 @@
-
-##SFP
-set_property PACKAGE_PIN Y10 [get_ports {o_sfp_tx_disable[0]}]
-set_property IOSTANDARD LVCMOS33 [get_ports {o_sfp_tx_disable[0]}]
-
-set_property PACKAGE_PIN G10 [get_ports {o_sfp_tx_disable[1]}]
-set_property IOSTANDARD LVCMOS33 [get_ports {o_sfp_tx_disable[1]}]
-
-
-set_property PACKAGE_PIN Y5 [get_ports diff_clk_n]
-set_property PACKAGE_PIN Y6 [get_ports diff_clk_p]
-
-create_clock -period 6.4 -name diff_clk_p [get_ports diff_clk_p]
-
-
-
-set_property PACKAGE_PIN T2 [get_ports sfp_0_rxp]
-set_property PACKAGE_PIN T1 [get_ports sfp_0_rxn]
-set_property PACKAGE_PIN R4 [get_ports sfp_0_txp]
-set_property PACKAGE_PIN R3 [get_ports sfp_0_txn]
-
-## Aurora
-set_property PACKAGE_PIN V5 [get_ports diff2_clk_n]
-set_property PACKAGE_PIN V6 [get_ports diff2_clk_p]
-
-create_clock -period 8.0 -name diff2_clk_p [get_ports diff2_clk_p]
-
-#set_property LOC GTHE4_CHANNEL_X0Y7 [get_cells aurora_module_i/aurora_64b66b_0_i/inst/gt_wrapper_i/aurora_64b66b_0_multi_gt_i/gt0_aurora_64b66b_0_i/gthe4_i]
-set_property LOC GTHE4_CHANNEL_X0Y7 [get_cells -hierarchical -filter {NAME =~ *aurora_64b66b_0*gen_channel_container[1].*gen_gthe4_channel_inst[0].GTHE4_CHANNEL_PRIM_INST}]
-
-set_property PACKAGE_PIN L3 [get_ports sys_clk2]
-set_property IOSTANDARD LVCMOS18 [get_ports sys_clk2]
-
-#set_property LOC N4 [get_ports sfp_1_txp]
-#set_property LOC N3 [get_ports sfp_1_txn]
-#set_property LOC P2 [get_ports sfp_1_rxp]
-#set_property LOC P1 [get_ports sfp_1_rxn]
-
-##UART
-set_property -dict {PACKAGE_PIN B11 IOSTANDARD LVCMOS33} [get_ports uart_txd]
-set_property -dict {PACKAGE_PIN A12 IOSTANDARD LVCMOS33} [get_ports uart_rxd]
-
-
-### SFP_State
-
-set_property -dict {PACKAGE_PIN G11 IOSTANDARD LVCMOS33} [get_ports o_SFP_A_Link_LED]
-set_property -dict {PACKAGE_PIN F10 IOSTANDARD LVCMOS33} [get_ports o_SFP_A_Act_LED]
-set_property -dict {PACKAGE_PIN D10 IOSTANDARD LVCMOS33} [get_ports o_SFP_B_Link_LED]
-set_property -dict {PACKAGE_PIN C11 IOSTANDARD LVCMOS33} [get_ports o_SFP_B_Act_LED]
-
-set_property -dict {PACKAGE_PIN W10 IOSTANDARD LVCMOS33} [get_ports i_SFP_A_MODABS]
-set_property -dict {PACKAGE_PIN J12 IOSTANDARD LVCMOS33} [get_ports i_SFP_A_LOS]
-set_property -dict {PACKAGE_PIN A10 IOSTANDARD LVCMOS33} [get_ports i_SFP_A_TXFLT]
-set_property -dict {PACKAGE_PIN H12 IOSTANDARD LVCMOS33} [get_ports i_SFP_B_MODABS]
-set_property -dict {PACKAGE_PIN E10 IOSTANDARD LVCMOS33} [get_ports i_SFP_B_LOS]
-set_property -dict {PACKAGE_PIN H11 IOSTANDARD LVCMOS33} [get_ports i_SFP_B_TXFLT]
-
-
-#set_property C_CLK_INPUT_FREQ_HZ 300000000 [get_debug_cores dbg_hub]
-#set_property C_ENABLE_CLK_DIVIDER false [get_debug_cores dbg_hub]
-#set_property C_USER_SCAN_CHAIN 1 [get_debug_cores dbg_hub]
-#connect_debug_port dbg_hub/clk [get_nets clk]
-
-
-
-
-#set_property -dict { PACKAGE_PIN AA10   IOSTANDARD LVCMOS33 } [get_ports { i_Z_B_XA[9] }];     # i_Z_B_XA [9] # 사용 않함
-
-
-######################################################################################################################
 # Kria_K26_SOM_Rev1.xdc 파일 내에서 Package Pin을 찾아야함.
 # 회로도 내 CN1001이 som240_1, CN1002가 som240_2
 # 그리고 포트의 라우팅 이름이 해당 보드의 핀 이름임
 # 예시) 회로도 내 CN1001의 라우팅 이름이 A3라면  Kria_K26_SOM_Rev1.xdc 파일의 get_ports는 "som240_1_a3"이다.
 
-### LAN, SFP Clock
+### Clock Constraints
+create_clock -period 6.400 -name GT_DIFF_REFCLK1_0_clk_p -waveform {0.000 3.200} [get_ports {GT_DIFF_REFCLK1_0_clk_p}]
+
+### LAN Clock
 set_property -dict { PACKAGE_PIN C3		IOSTANDARD LVCMOS18 } [get_ports sys_clk];				# HPARCK
+#set_property -dict { PACKAGE_PIN L3		IOSTANDARD LVCMOS18 } [get_ports sys_clk_2];			# HPBRCK
 
 ### LAN Constraints (See Notion - Zynq - Error and Critical Warning Page)
 set_property IODELAY_GROUP tri_mode_ethernet_mac_iodelay_grp1 [get_cells -hier -filter {NAME =~ design_1_i/LAN/LAN_1/* && IODELAY_GROUP != "" }] 
@@ -86,6 +20,40 @@ set_property REFCLK_FREQUENCY 300.03 [get_cells -hier -filter {NAME =~ *delay_rg
 set_property REFCLK_FREQUENCY 300.03 [get_cells -hier -filter {NAME =~ *delay_rgmii_tx_ctl}]
 set_property REFCLK_FREQUENCY 300.03 [get_cells -hier -filter {NAME =~ *delay_rgmii_rx_ctl}]
 set_property REFCLK_FREQUENCY 300.03 [get_cells -hier -filter {NAME =~ *delay_rgmii_rxd}]
+
+### SFP 1
+set_property PACKAGE_PIN R4 [get_ports GT_SERIAL_TX_1_txp];										# SFTDPA
+set_property PACKAGE_PIN R3 [get_ports GT_SERIAL_TX_1_txn];										# SFTDNA
+set_property PACKAGE_PIN T2 [get_ports GT_SERIAL_RX_1_rxp];										# SFRDPA
+set_property PACKAGE_PIN T1 [get_ports GT_SERIAL_RX_1_rxn];										# SFRDNA
+
+set_property PACKAGE_PIN Y5 [get_ports GT_DIFF_REFCLK_1_clk_n];									# GTHRCK0N
+set_property PACKAGE_PIN Y6 [get_ports GT_DIFF_REFCLK_1_clk_p];									# GTHRCK0P
+
+set_property -dict {PACKAGE_PIN Y10 IOSTANDARD LVCMOS33} [get_ports o_sfp_1_tx_en];				# SFTDISA
+set_property -dict {PACKAGE_PIN J12 IOSTANDARD LVCMOS33} [get_ports i_sfp_1_los];				# SFRLOSA
+set_property -dict {PACKAGE_PIN A10 IOSTANDARD LVCMOS33} [get_ports i_sfp_1_tx_fault];			# SFTFLTA
+set_property -dict {PACKAGE_PIN W10 IOSTANDARD LVCMOS33} [get_ports i_sfp_1_module_en];			# SFMABSA
+
+set_property -dict {PACKAGE_PIN G11 IOSTANDARD LVCMOS33} [get_ports o_g_led_1];					# SFLNKA~
+set_property -dict {PACKAGE_PIN F10 IOSTANDARD LVCMOS33} [get_ports o_y_led_1];					# SFACTA~
+
+### SFP 2
+set_property PACKAGE_PIN N4 [get_ports GT_SERIAL_TX_2_txp];										# SFTDPB
+set_property PACKAGE_PIN N3 [get_ports GT_SERIAL_TX_2_txn];										# SFTDNB
+set_property PACKAGE_PIN P2 [get_ports GT_SERIAL_RX_2_rxp];										# SFRDPB
+set_property PACKAGE_PIN P1 [get_ports GT_SERIAL_RX_2_rxn];										# SFRDNB
+
+set_property PACKAGE_PIN V5 [get_ports GT_DIFF_REFCLK_2_clk_n];									# GTHRCK1N
+set_property PACKAGE_PIN V6 [get_ports GT_DIFF_REFCLK_2_clk_p];									# GTHRCK1P
+
+set_property -dict {PACKAGE_PIN G10 IOSTANDARD LVCMOS33} [get_ports o_sfp_2_tx_en];				# SFTDISB
+set_property -dict {PACKAGE_PIN E10 IOSTANDARD LVCMOS33} [get_ports i_sfp_2_los];				# SFRLOSB
+set_property -dict {PACKAGE_PIN H11 IOSTANDARD LVCMOS33} [get_ports i_sfp_2_tx_fault];			# SFTFLTB
+set_property -dict {PACKAGE_PIN H12 IOSTANDARD LVCMOS33} [get_ports i_sfp_2_module_en];			# SFMABSB
+
+set_property -dict {PACKAGE_PIN D10 IOSTANDARD LVCMOS33} [get_ports o_g_led_2];					# SFLNKB~
+set_property -dict {PACKAGE_PIN C11 IOSTANDARD LVCMOS33} [get_ports o_y_led_2];					# SFACTB~
 
 ### LAN 1	
 set_property -dict { PACKAGE_PIN G3		IOSTANDARD LVCMOS18 } [get_ports lan_1_mdio_mdc];		# EMDCA

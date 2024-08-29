@@ -81,6 +81,7 @@ module DSP_XINTF
 	input [31:0] i_c_adc_data,
 	input [31:0] i_v_adc_data,
 
+	// 36ea
 	output reg [31:0] o_DSP_Duty,
     output reg [31:0] o_DSP_FaultNum,
     output reg [31:0] o_DSP_System_Status,
