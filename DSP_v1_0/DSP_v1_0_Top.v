@@ -6,10 +6,13 @@ MPS DSP Module
 개발 4팀 전경원 차장
 
 24.06.10 :	최초 생성
+
 24.07.08 :	DPBRAM Test용 AXI 추가
 			위의 이유로 인하여 Zynq에서 DPBRAM에 접근하는 Port 수정
 			- AXI4_Lite_S01 수정
 			- DSP_XINTF 수정
+
+24.09.10 :	사용안함. MPS_Core로 대체
 
 이성진 차장의 퇴사로 인하여 MPS PL 프로그래밍
 

@@ -1,10 +1,13 @@
+`timescale 1 ns / 1 ps
+
 /*
 0. PS가 
     Interlock State. From INTL_v1_0인 i_INTL_state는 AXI로 PS가 읽어가게만 설정함
     o_Ready, o_Hart_beat 핀 만들기만 해놓음
 	SFP Handler 추가 해야함
 */
-module DSP_v1_1_Top #
+
+module MPS_Core_v1_0_Top #
 (
     parameter integer C_S_AXI_DATA_WIDTH = 32,
 	parameter integer C_S_AXI_ADDR_NUM = 128,
@@ -49,11 +52,11 @@ module DSP_v1_1_Top #
     (* X_INTERFACE_INFO = "HMT:JKW:s_dpbram_port:1.0 M_XINTF_W_DPBRAM din0" *) output [15:0] o_xintf_w_ram_din,
     (* X_INTERFACE_INFO = "HMT:JKW:s_dpbram_port:1.0 M_XINTF_W_DPBRAM dout0" *) input [15:0] i_xintf_w_ram_dout,
 
-    (* X_INTERFACE_INFO = "HMT:JKW:s_dpbram_port:1.0 M_XINTF_R_DPBRAM addr0" *) output [8:0] o_xintf_r_ram_addr,
-    (* X_INTERFACE_INFO = "HMT:JKW:s_dpbram_port:1.0 M_XINTF_R_DPBRAM ce0" *) output o_xintf_r_ram_ce,
-    (* X_INTERFACE_INFO = "HMT:JKW:s_dpbram_port:1.0 M_XINTF_R_DPBRAM we0" *) output o_xintf_r_ram_we,
-    (* X_INTERFACE_INFO = "HMT:JKW:s_dpbram_port:1.0 M_XINTF_R_DPBRAM din0" *) output [15:0] o_xintf_r_ram_din,
-    (* X_INTERFACE_INFO = "HMT:JKW:s_dpbram_port:1.0 M_XINTF_R_DPBRAM dout0" *) input [15:0] i_xintf_r_ram_dout,
+    (* X_INTERFACE_INFO = "HMT:JKW:s_dpbram_port:1.0 S_XINTF_R_DPBRAM addr1" *) output [8:0] o_xintf_r_ram_addr,
+    (* X_INTERFACE_INFO = "HMT:JKW:s_dpbram_port:1.0 S_XINTF_R_DPBRAM ce1" *) output o_xintf_r_ram_ce,
+    (* X_INTERFACE_INFO = "HMT:JKW:s_dpbram_port:1.0 S_XINTF_R_DPBRAM we1" *) output o_xintf_r_ram_we,
+    (* X_INTERFACE_INFO = "HMT:JKW:s_dpbram_port:1.0 S_XINTF_R_DPBRAM din1" *) output [15:0] o_xintf_r_ram_din,
+    (* X_INTERFACE_INFO = "HMT:JKW:s_dpbram_port:1.0 S_XINTF_R_DPBRAM dout1" *) input [15:0] i_xintf_r_ram_dout,
 
     // AXI4 Lite Bus Interface Ports
 	input wire  s00_axi_aclk,
@@ -205,8 +208,8 @@ module DSP_v1_1_Top #
 		.S_AXI_RREADY(s00_axi_rready)
 	);
 
-    DSP_XINTF
-	u_DSP_XINTF
+    DSP_Handler
+	u_DSP_Handler
 	(
         .i_clk(s00_axi_aclk),
         .i_rst(s00_axi_aresetn),

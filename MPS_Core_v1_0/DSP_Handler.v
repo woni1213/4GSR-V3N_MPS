@@ -4,7 +4,7 @@
  - 계속 Read Write
 */
 
-module DSP_XINTF
+module DSP_Handler
 (
     input i_clk,
     input i_rst,
