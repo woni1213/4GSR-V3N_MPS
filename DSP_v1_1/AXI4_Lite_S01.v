@@ -21,7 +21,7 @@ module AXI4_Lite_S01 #
 	// SFP Control
 	output reg			o_sfp_m_en,				// 웹 페이지에서 명령줘야함. Init할 때 1로 주면 안됨
 	input 				i_pwm_en,
-	output reg			o_pwn_en,
+	output reg			o_pwm_en,
 	input [15:0] 		i_zynq_intl,
 
 	// DPBRAM Write
@@ -56,6 +56,7 @@ module AXI4_Lite_S01 #
 	input [31:0]		i_slave_pi_param_2,
 	input [31:0]		i_slave_pi_param_3,
 	output reg [31:0]	o_master_pi_param,
+	input 				i_axi_data_valid,
 
 	output reg [C_DATA_STREAM_BIT - 1 : 0] o_master_stream_data,
 	input [C_DATA_STREAM_BIT - 1: 0] i_master_stream_data,
@@ -290,7 +291,7 @@ module AXI4_Lite_S01 #
 		if (slv_reg[0][0])
 		begin
 			o_sfp_m_en 		<= slv_reg[0][0];
-			o_pwn_en		<= slv_reg[0][1];
+			o_pwm_en		<= slv_reg[0][1];
 
 			o_c_factor 		<= slv_reg[1];
 			o_v_factor 		<= slv_reg[2];
@@ -319,7 +320,7 @@ module AXI4_Lite_S01 #
 		else
 		begin
 			o_sfp_m_en 			<= 0;
-			o_pwn_en			<= i_master_stream_data[(C_DATA_FRAME_BIT * 2) + (16 * 1) +: 1];
+			o_pwm_en			<= i_master_stream_data[(C_DATA_FRAME_BIT * 2) + (16 * 1) +: 1];
 
 			o_c_factor 			<= i_master_stream_data[(C_DATA_FRAME_BIT * 2) + (16 * 22) +: 32];
 			o_v_factor 			<= i_master_stream_data[(C_DATA_FRAME_BIT * 2) + (16 * 24) +: 32];
@@ -372,18 +373,21 @@ module AXI4_Lite_S01 #
 	// SFP Receive Data Stream
 	always @(posedge S_AXI_ACLK)
 	begin
-		if (slv_reg[0][0])
+		if ((i_axi_data_valid) && (slv_reg[0][0]))
 		begin
+			// Slave 3
 			slv_reg[108]		<= i_master_stream_data[(32 * 1) -: 32];
 			slv_reg[109]		<= i_master_stream_data[(32 * 2) -: 32];
 			slv_reg[110]		<= i_master_stream_data[(32 * 3) -: 32];
 			slv_reg[111]		<= i_master_stream_data[(32 * 4) -: 32];
 
+			// Slave 2
 			slv_reg[116]		<= i_master_stream_data[(C_DATA_FRAME_BIT * 1) + (32 * 1) -: 32];
 			slv_reg[117]		<= i_master_stream_data[(C_DATA_FRAME_BIT * 1) + (32 * 2) -: 32];
 			slv_reg[118]		<= i_master_stream_data[(C_DATA_FRAME_BIT * 1) + (32 * 3) -: 32];
 			slv_reg[119]		<= i_master_stream_data[(C_DATA_FRAME_BIT * 1) + (32 * 4) -: 32];
 
+			// Slave 1
 			slv_reg[124]		<= i_master_stream_data[(C_DATA_FRAME_BIT * 2) + (32 * 1) -: 32];
 			slv_reg[125]		<= i_master_stream_data[(C_DATA_FRAME_BIT * 2) + (32 * 2) -: 32];
 			slv_reg[126]		<= i_master_stream_data[(C_DATA_FRAME_BIT * 2) + (32 * 3) -: 32];

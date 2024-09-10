@@ -137,6 +137,6 @@ module SFP_Data_Handler #
 	end
 
 	assign o_sfp_start_flag = (state == M_TX) || (state == S_TX);
-	assign o_axi_data_valid = (state != M_RUN);
+	assign o_axi_data_valid = ((state == M_RUN) || (state == M_RX_DATA_SET)) ? 0 : 1;
 
 endmodule

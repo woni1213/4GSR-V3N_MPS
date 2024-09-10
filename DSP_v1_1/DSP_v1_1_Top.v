@@ -12,7 +12,7 @@ module DSP_v1_1_Top #
 
 	parameter integer C_AXIS_TDATA_WIDTH = 64,		// Frame Data Width
 	parameter integer C_NUMBER_OF_SLAVE = 3,		// Slave 수
-	parameter integer C_NUMBER_OF_FRAME = 6,		// Slave의 Frame 수
+	parameter integer C_NUMBER_OF_FRAME = 7,		// Slave의 Frame 수
 
 	parameter integer C_DATA_STREAM_BIT = ((C_AXIS_TDATA_WIDTH) * (C_NUMBER_OF_SLAVE) * (C_NUMBER_OF_FRAME)),	// Stream Bit 수
 	parameter integer C_DATA_FRAME_BIT = ((C_AXIS_TDATA_WIDTH) * (C_NUMBER_OF_FRAME))					// Frame Bit 수
@@ -34,8 +34,8 @@ module DSP_v1_1_Top #
 	output o_v_factor_axis_tvalid,
 
 	// SFP Data
-	output [(C_NUMBER_OF_FRAME * C_AXIS_TDATA_WIDTH) * C_NUMBER_OF_SLAVE : 0] o_stream_data,
-	input [(C_NUMBER_OF_FRAME * C_AXIS_TDATA_WIDTH) * C_NUMBER_OF_SLAVE : 0] i_stream_data,
+	output [C_DATA_STREAM_BIT - 1 : 0] o_stream_data,
+	input [C_DATA_STREAM_BIT - 1 : 0] i_stream_data,
 
 	// SFP Flag
 	output o_aurora_tx_start_flag,				// SFP Tx 시작
@@ -87,6 +87,7 @@ module DSP_v1_1_Top #
 	wire sfp_m_en;
 	wire pwm_en;
 	wire zynq_intl;
+	wire axi_data_valid;
 
     wire [15:0] zynq_status;
 	wire [15:0] o_zynq_ver;
@@ -179,6 +180,7 @@ module DSP_v1_1_Top #
 		.o_master_stream_data(tx_axi_data),				// SFP Master Mode Data to Slave
 		.i_msater_stream_data(rx_axi_data),				// SFP Master Mode Data from Slave
 		.o_master_pi_param(master_pi_param),
+		.i_axi_data_valid(axi_data_valid),
 
 		.S_AXI_ACLK(s00_axi_aclk),
 		.S_AXI_ARESETN(s00_axi_aresetn),
@@ -280,6 +282,7 @@ module DSP_v1_1_Top #
 		.i_sfp_end_flag(i_aurora_rx_end_flag),
 		.o_sfp_start_flag(o_aurora_tx_start_flag),
 
+		.o_axi_data_valid(axi_data_valid),
 		.i_sfp_m_en(sfp_m_en)
 	);
 
