@@ -51,11 +51,17 @@ module MPS_Core_v1_0_Top #
     (* X_INTERFACE_INFO = "HMT:JKW:s_dpbram_port:1.0 M_XINTF_W_DPBRAM din0" *) output [15:0] o_xintf_w_ram_din,
     (* X_INTERFACE_INFO = "HMT:JKW:s_dpbram_port:1.0 M_XINTF_W_DPBRAM dout0" *) input [15:0] i_xintf_w_ram_dout,
 
-    (* X_INTERFACE_INFO = "HMT:JKW:s_dpbram_port:1.0 S_XINTF_R_DPBRAM addr1" *) output [8:0] o_xintf_r_ram_addr,
-    (* X_INTERFACE_INFO = "HMT:JKW:s_dpbram_port:1.0 S_XINTF_R_DPBRAM ce1" *) output o_xintf_r_ram_ce,
-    (* X_INTERFACE_INFO = "HMT:JKW:s_dpbram_port:1.0 S_XINTF_R_DPBRAM we1" *) output o_xintf_r_ram_we,
-    (* X_INTERFACE_INFO = "HMT:JKW:s_dpbram_port:1.0 S_XINTF_R_DPBRAM din1" *) output [15:0] o_xintf_r_ram_din,
-    (* X_INTERFACE_INFO = "HMT:JKW:s_dpbram_port:1.0 S_XINTF_R_DPBRAM dout1" *) input [15:0] i_xintf_r_ram_dout,
+    (* X_INTERFACE_INFO = "HMT:JKW:m_dpbram_port:1.0 S_XINTF_R_DPBRAM addr1" *) output [8:0] o_xintf_r_ram_addr,
+    (* X_INTERFACE_INFO = "HMT:JKW:m_dpbram_port:1.0 S_XINTF_R_DPBRAM ce1" *) output o_xintf_r_ram_ce,
+    (* X_INTERFACE_INFO = "HMT:JKW:m_dpbram_port:1.0 S_XINTF_R_DPBRAM we1" *) output o_xintf_r_ram_we,
+    (* X_INTERFACE_INFO = "HMT:JKW:m_dpbram_port:1.0 S_XINTF_R_DPBRAM din1" *) output [15:0] o_xintf_r_ram_din,
+    (* X_INTERFACE_INFO = "HMT:JKW:m_dpbram_port:1.0 S_XINTF_R_DPBRAM dout1" *) input [15:0] i_xintf_r_ram_dout,
+
+	(* X_INTERFACE_INFO = "HMT:JKW:s_dpbram_port:1.0 M_XINTF_WF_DPBRAM addr0" *) output [9:0] o_xintf_wf_ram_addr,
+    (* X_INTERFACE_INFO = "HMT:JKW:s_dpbram_port:1.0 M_XINTF_WF_DPBRAM ce0" *) output o_xintf_wf_ram_ce,
+    (* X_INTERFACE_INFO = "HMT:JKW:s_dpbram_port:1.0 M_XINTF_WF_DPBRAM we0" *) output o_xintf_wf_ram_we,
+    (* X_INTERFACE_INFO = "HMT:JKW:s_dpbram_port:1.0 M_XINTF_WF_DPBRAM din0" *) output [15:0] o_xintf_wf_ram_din,
+    (* X_INTERFACE_INFO = "HMT:JKW:s_dpbram_port:1.0 M_XINTF_WF_DPBRAM dout0" *) input [15:0] i_xintf_wf_ram_dout,
 
     // AXI4 Lite Bus Interface Ports
 	input wire  s00_axi_aclk,
@@ -170,6 +176,10 @@ module MPS_Core_v1_0_Top #
 		.i_dsp_firmware_ver(i_dsp_ver),
 		.i_wf_read_cnt(wf_read_cnt),
 
+		// Waveform DPBRAM
+		.o_xintf_wf_ram_addr(o_xintf_wf_ram_addr),
+		.o_xintf_wf_ram_din(o_xintf_wf_ram_din),
+
 		// SFP Data
 		.i_slave_pi_param_1(slave_pi_param_1),			// Slave PI Parameter Receive to DSP (SFP Master Mode)
 		.i_slave_pi_param_2(slave_pi_param_2),
@@ -258,6 +268,9 @@ module MPS_Core_v1_0_Top #
 
     assign o_xintf_w_ram_we = 1;
     assign o_xintf_r_ram_we = 0;
+
+	assign o_xintf_wf_ram_ce = 1;
+	assign o_xintf_wf_ram_we = 1;
 
 	assign zynq_intl = (i_zynq_intl != 0);
 

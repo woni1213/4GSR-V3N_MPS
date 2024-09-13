@@ -52,6 +52,10 @@ module AXI4_Lite_S01 #
 	input [15:0]		i_dsp_ver,
     input [31:0]		i_wf_read_cnt,
 
+	// Waveform DPBRAM
+	output reg [9:0]	o_xintf_wf_ram_addr,
+	output reg [15:0]	o_xintf_wf_ram_din,
+
 	// SFP PI Parameter
 	input [31:0]		i_slave_pi_param_1,
 	input [31:0]		i_slave_pi_param_2,
@@ -561,6 +565,8 @@ module AXI4_Lite_S01 #
 			o_max_v			<= slv_reg[19];
 			o_deadband		<= slv_reg[20][15:0];
 			o_sw_freq		<= slv_reg[20][31:16];
+			o_xintf_wf_ram_addr <= slv_reg[21];
+			o_xintf_wf_ram_din <= slv_reg[22];
 		end
 
 	end
