@@ -14,16 +14,15 @@ module MPS_Core_v1_0_Top #
 	parameter integer C_S_AXI_ADDR_WIDTH = $clog2(C_S_AXI_ADDR_NUM) + 2,
 
 	parameter integer C_AXIS_TDATA_WIDTH = 64,		// Frame Data Width
-	parameter integer C_NUMBER_OF_SLAVE = 3,		// Slave 수
-	parameter integer C_NUMBER_OF_FRAME = 7,		// Slave의 Frame 수
+	parameter integer C_NUMBER_OF_FRAME = 2,		// Slave의 Frame 수
 
-	parameter integer C_DATA_STREAM_BIT = ((C_AXIS_TDATA_WIDTH) * (C_NUMBER_OF_SLAVE) * (C_NUMBER_OF_FRAME)),	// Stream Bit 수
 	parameter integer C_DATA_FRAME_BIT = ((C_AXIS_TDATA_WIDTH) * (C_NUMBER_OF_FRAME))					// Frame Bit 수
 )
 (
 	input [15:0] i_zynq_intl,						// Interlock Input
-	input i_pwm_en,									// PWM Enable (AND Gate IP)
-	output o_pwm_en,
+	output o_pwm_en,								// INTL IP
+	input i_dsp_sfp_en,								// DSP SFP Enable
+	input i_tx_en,									// AXIS FRAME IP
 
     // From ADC
 	input [31:0] i_c_adc_data,						// Current ADC Floating Data
@@ -37,8 +36,8 @@ module MPS_Core_v1_0_Top #
 	output o_v_factor_axis_tvalid,
 
 	// SFP Data
-	output [C_DATA_STREAM_BIT - 1 : 0] o_stream_data,
-	input [C_DATA_STREAM_BIT - 1 : 0] i_stream_data,
+	output [C_DATA_FRAME_BIT - 1 : 0] o_stream_data,
+	input [C_DATA_FRAME_BIT - 1 : 0] i_stream_data,
 
 	// SFP Flag
 	output o_aurora_tx_start_flag,				// SFP Tx 시작
@@ -79,13 +78,7 @@ module MPS_Core_v1_0_Top #
     output wire [C_S_AXI_DATA_WIDTH-1 : 0] s00_axi_rdata,
     output wire [1 : 0] s00_axi_rresp,
     output wire  s00_axi_rvalid,
-    input wire  s00_axi_rready,
-
-    // Debugging
-    output [1:0] o_debug_r_state,
-    output [1:0] o_debug_w_state,
-    output [8:0] o_W_addr_pointer,
-    output [8:0] o_R_addr_pointer
+    input wire  s00_axi_rready
 );
 	wire sfp_m_en;
 	wire pwm_en;
@@ -121,8 +114,8 @@ module MPS_Core_v1_0_Top #
 	wire [31:0] slave_pi_param_3;
 	wire [31:0] wf_read_cnt;
 
-	wire [(C_NUMBER_OF_FRAME * C_AXIS_TDATA_WIDTH) * C_NUMBER_OF_SLAVE : 0] rx_axi_data;
-	wire [(C_NUMBER_OF_FRAME * C_AXIS_TDATA_WIDTH) * C_NUMBER_OF_SLAVE : 0] tx_axi_data;
+	wire [C_DATA_FRAME_BIT - 1 : 0] rx_axi_data;
+	wire [C_DATA_FRAME_BIT - 1 : 0] tx_axi_data;
 
 	AXI4_Lite_S01 #
 	(
@@ -130,7 +123,6 @@ module MPS_Core_v1_0_Top #
 		.C_S_AXI_ADDR_NUM(C_S_AXI_ADDR_NUM),
 		.C_S_AXI_ADDR_WIDTH(C_S_AXI_ADDR_WIDTH),
 
-		.C_DATA_STREAM_BIT(C_DATA_STREAM_BIT),
 		.C_DATA_FRAME_BIT(C_DATA_FRAME_BIT)
 	)
 	u_AXI4_Lite_S01
@@ -144,10 +136,12 @@ module MPS_Core_v1_0_Top #
         .i_v_adc_data(i_v_adc_data),
 
 		// System Control
-		.o_sfp_m_en(sfp_m_en),
-		.i_pwm_en(i_pwm_en),
+		.o_sfp_master(sfp_m_en),
 		.o_pwn_en(o_pwm_en),
-		.i_zynq_intl(i_zynq_intl),
+		.i_dsp_sfp_en(i_dsp_sfp_en),
+		.i_tx_en(i_tx_en),
+		.o_sfp_start_flag(o_aurora_tx_start_flag),
+		.i_sfp_end_flag(i_aurora_rx_end_flag),
 
 		// DPBRAM Write
         .o_zynq_status(zynq_status),
@@ -180,8 +174,8 @@ module MPS_Core_v1_0_Top #
 		.i_slave_pi_param_1(slave_pi_param_1),			// Slave PI Parameter Receive to DSP (SFP Master Mode)
 		.i_slave_pi_param_2(slave_pi_param_2),
 		.i_slave_pi_param_3(slave_pi_param_3),
-		.o_master_stream_data(tx_axi_data),				// SFP Master Mode Data to Slave
-		.i_msater_stream_data(rx_axi_data),				// SFP Master Mode Data from Slave
+		.o_master_stream_data(o_stream_data),				// SFP Master Mode Data to Slave
+		.i_msater_stream_data(i_stream_data),				// SFP Master Mode Data from Slave
 		.o_master_pi_param(master_pi_param),
 		.i_axi_data_valid(axi_data_valid),
 
@@ -256,38 +250,8 @@ module MPS_Core_v1_0_Top #
 		.o_wf_read_cnt(wf_read_cnt),
 		.o_slave_pi_param_1(slave_pi_param_1),			// Slave PI Parameter Receive to DSP (SFP Master Mode)
 		.o_slave_pi_param_2(slave_pi_param_2),
-		.o_slave_pi_param_3(slave_pi_param_3),
-
-        // Debugging
-        .o_debug_r_state(o_debug_r_state),
-        .o_debug_w_state(o_debug_w_state),
-        .o_R_addr_pointer(o_R_addr_pointer),
-        .o_W_addr_pointer(o_W_addr_pointer)
+		.o_slave_pi_param_3(slave_pi_param_3)
     );
-
-	SFP_Handler #
-	(
-		.C_AXIS_TDATA_WIDTH(C_AXIS_TDATA_WIDTH),
-		.C_DATA_STREAM_BIT(C_DATA_STREAM_BIT),
-		.C_DATA_FRAME_BIT(C_DATA_FRAME_BIT)
-	)
-	u_SFP_Handler
-	(
-		.i_clk(i_clk),
-		.i_rst(i_rst),
-
-		.i_axi_data(tx_axi_data),
-		.o_axi_data(rx_axi_data),
-
-		.i_stream_data(i_stream_data),
-		.o_stream_data(o_stream_data),
-
-		.i_sfp_end_flag(i_aurora_rx_end_flag),
-		.o_sfp_start_flag(o_aurora_tx_start_flag),
-
-		.o_axi_data_valid(axi_data_valid),
-		.i_sfp_m_en(sfp_m_en)
-	);
 
     assign o_c_factor_axis_tvalid = 1;
     assign o_v_factor_axis_tvalid = 1;

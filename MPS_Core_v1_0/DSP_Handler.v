@@ -51,13 +51,7 @@ module DSP_Handler
     output reg [31:0] o_wf_read_cnt,
     output reg [15:0] o_slave_pi_param_1,
     output reg [31:0] o_slave_pi_param_2,
-    output reg [31:0] o_slave_pi_param_3,
-
-    // Debugging
-    output [1:0] o_debug_r_state,
-    output [1:0] o_debug_w_state,
-    output [8:0] o_W_addr_pointer,
-    output [8:0] o_R_addr_pointer
+    output reg [31:0] o_slave_pi_param_3
 );
 
     localparam IDLE = 0;
@@ -311,11 +305,6 @@ module DSP_Handler
                     o_slave_pi_param_2 <= o_slave_pi_param_2;
                     o_slave_pi_param_3 <= o_slave_pi_param_3;
         end
-    end
-
-    assign o_debug_r_state = r_state;
-    assign o_debug_w_state = w_state;
-    assign o_W_addr_pointer = w_addr_pointer;
-    assign o_R_addr_pointer = r_addr_pointer;
+	end
 
 endmodule

@@ -6,7 +6,6 @@ module AXI4_Lite_S01 #
 	parameter integer C_S_AXI_ADDR_NUM 		= 0,
 	parameter integer C_S_AXI_ADDR_WIDTH	= 0,
 
-	parameter integer C_DATA_STREAM_BIT = 0,
 	parameter integer C_DATA_FRAME_BIT = 0
 )
 (
@@ -19,10 +18,12 @@ module AXI4_Lite_S01 #
 	input [31:0]		i_v_adc_data,
 
 	// SFP Control
-	output reg			o_sfp_m_en,				// 웹 페이지에서 명령줘야함. Init할 때 1로 주면 안됨
-	input 				i_pwm_en,
+	output				o_sfp_master,
 	output reg			o_pwm_en,
-	input [15:0] 		i_zynq_intl,
+	input				i_dsp_sfp_en,
+	input				i_tx_en,
+	output 				o_sfp_start_flag,
+	input 				i_sfp_end_flag,
 
 	// DPBRAM Write
 	output reg [15:0]	o_zynq_status,
@@ -58,8 +59,8 @@ module AXI4_Lite_S01 #
 	output reg [31:0]	o_master_pi_param,
 	input 				i_axi_data_valid,
 
-	output reg [C_DATA_STREAM_BIT - 1 : 0] o_master_stream_data,
-	input [C_DATA_STREAM_BIT - 1: 0] i_master_stream_data,
+	output reg [C_DATA_FRAME_BIT - 1 : 0] o_master_stream_data,
+	input [C_DATA_FRAME_BIT - 1: 0] i_master_stream_data,
 
 	input S_AXI_ACLK,
 	input S_AXI_ARESETN,
@@ -94,6 +95,8 @@ module AXI4_Lite_S01 #
 	reg [C_S_AXI_DATA_WIDTH-1 : 0] axi_rdata;
 	reg [1:0] axi_rresp;
 	reg axi_rvalid;
+
+	
 
 	localparam integer ADDR_LSB = 2;
 	localparam integer OPT_MEM_ADDR_BITS = $clog2(C_S_AXI_ADDR_NUM) - 1;
@@ -285,14 +288,257 @@ module AXI4_Lite_S01 #
 		end
 	end
 
-	// Output
-	always @(posedge S_AXI_ACLK)
-	begin
-		if (slv_reg[0][0])
-		begin
-			o_sfp_m_en 		<= slv_reg[0][0];
-			o_pwm_en		<= slv_reg[0][1];
+	// USer Code Here
 
+	localparam M_TX_IDLE = 0;
+	localparam M_TX_ZYNQ_DATA_SET = 1;
+	localparam M_TX_ZYNQ_EN = 2;
+	localparam M_TX_ZYNQ_DONE = 3;
+	localparam M_TX_DSP_DATA_SET = 4;
+	localparam M_TX_DSP_EN = 5;
+	localparam M_TX_DSP_DONE = 6;
+
+	localparam M_RX_IDLE = 0;
+	localparam M_RX_RUN = 1;
+	localparam M_RX_DONE = 2;
+
+	localparam S_TX_IDLE = 0;
+	localparam S_TX_STAT_DATA_SET = 0;
+	localparam S_TX_PASS_DATA_SET = 0;
+	localparam S_TX_EN = 0;
+	localparam S_TX_DONE = 0;
+
+	localparam S_RX_IDLE = 0;
+	localparam S_RX_RUN = 0;
+	localparam S_RX_PASS = 0;
+	localparam S_RX_INSERT = 0;
+	localparam S_RX_DONE = 0;
+
+	reg [2:0] m_tx_state;
+	reg [1:0] m_rx_state;
+	reg [2:0] s_tx_state;
+	reg [2:0] s_rx_state;
+
+	reg zynq_sfp_en;
+	reg [15:0] sfp_id;
+	wire [31:0] slave_state;
+	reg [9:0] slave_sfp_state_cnt;
+	wire [15:0] cmd;
+	wire [15:0] slv_id;
+	wire [31:0] data_1;
+	wire [31:0] data_2;
+	wire [31:0] data_3;
+
+	always @(posedge S_AXI_ACLK or negedge S_AXI_ARESETN)
+	begin
+		if (!S_AXI_ARESETN)
+			m_tx_state <= M_TX_IDLE;
+
+		else
+		begin
+			case (m_tx_state)
+				M_TX_IDLE :
+				begin
+					if (zynq_sfp_en)
+						m_tx_state <= M_TX_ZYNQ_DATA_SET;
+
+					else if (i_dsp_sfp_en)
+						m_tx_state <= M_TX_DSP_DATA_SET;
+
+					else
+						m_tx_state <= M_TX_IDLE;
+				end
+
+				// Zynq Cmd
+				M_TX_ZYNQ_DATA_SET :
+					m_tx_state <= M_TX_ZYNQ_EN;
+
+				M_TX_ZYNQ_EN :
+					m_tx_state <= M_TX_ZYNQ_DONE;
+
+				M_TX_ZYNQ_DONE :
+				begin
+					if (i_tx_en)
+						m_tx_state <= M_TX_IDLE;
+
+					else
+						m_tx_state <= M_TX_ZYNQ_DONE;
+				end
+
+
+				// DSP Cmd
+				M_TX_DSP_DATA_SET :
+					m_tx_state <= M_TX_DSP_EN;
+
+				M_TX_DSP_EN :
+					m_tx_state <= M_TX_DSP_DONE;
+
+				M_TX_DSP_DONE :
+				begin
+					if (i_tx_en)
+							m_tx_state <= M_TX_IDLE;
+
+					else
+						m_tx_state <= M_TX_DSP_DONE;
+				end
+			endcase
+		end
+	end
+
+	always @(posedge S_AXI_ACLK or negedge S_AXI_ARESETN)
+	begin
+		if (!S_AXI_ARESETN)
+			m_rx_state <= M_RX_IDLE;
+
+		else
+		begin
+			case (m_rx_state)
+				M_RX_IDLE :
+				begin
+					if (i_sfp_end_flag)
+						m_rx_state <= M_RX_RUN;
+
+					else
+						m_rx_state <= M_RX_IDLE;
+				end
+
+				M_RX_RUN :
+					m_rx_state <= M_RX_DONE;
+
+				M_RX_DONE :
+					m_rx_state <= M_RX_IDLE;
+			endcase
+		end
+	end
+
+	always @(posedge S_AXI_ACLK or negedge S_AXI_ARESETN)
+	begin
+		if (!S_AXI_ARESETN)
+			s_tx_state <= S_TX_IDLE;
+
+		else
+		begin
+			case (s_tx_state)
+				S_TX_IDLE :
+				begin
+					if (slave_sfp_state_cnt == 199)
+						s_tx_state <= S_TX_STAT_DATA_SET;
+
+					else if (s_rx_state == S_RX_PASS)
+						s_tx_state <= S_TX_PASS_DATA_SET;
+
+					else
+						s_tx_state <= S_TX_IDLE;
+				end
+
+				S_TX_STAT_DATA_SET :
+					s_tx_state <= S_TX_EN;
+
+				S_TX_PASS_DATA_SET :
+					s_tx_state <= S_TX_EN;
+
+				S_TX_EN :
+					s_tx_state <= S_TX_DONE;
+
+				S_TX_DONE :
+				begin
+					if (i_tx_en)
+						s_tx_state <= S_TX_IDLE;
+
+					else
+						s_tx_state <= S_TX_DONE;
+				end
+			endcase
+		end
+	end
+
+	always @(posedge S_AXI_ACLK or negedge S_AXI_ARESETN)
+	begin
+		if (!S_AXI_ARESETN)
+			s_rx_state <= S_RX_IDLE;
+
+		else
+		begin
+			case (s_rx_state)
+				S_RX_IDLE :
+				begin
+					if (i_sfp_end_flag)
+						s_rx_state <= S_RX_RUN;
+
+					else
+						s_rx_state <= S_RX_IDLE;
+				end
+
+				S_RX_RUN :
+				begin
+					if (slv_id != sfp_id)
+						s_rx_state <= S_RX_PASS;
+
+					else
+						s_rx_state <= S_RX_INSERT;
+				end
+				
+				S_RX_PASS :
+				begin
+					if (s_tx_state == S_TX_EN)
+						s_rx_state <= S_RX_DONE;
+
+					else
+						s_rx_state <= S_RX_PASS;
+				end
+
+				S_RX_INSERT :
+					s_rx_state <= S_RX_DONE;
+
+				S_RX_DONE :
+					s_rx_state <= S_RX_IDLE;
+			endcase
+		end
+	end
+
+	always @(posedge S_AXI_ACLK or negedge S_AXI_ARESETN)
+	begin
+		if (sfp_id != 0)
+		begin
+			if (s_rx_state == S_RX_INSERT)
+			begin
+				case (cmd)
+					1 : o_pwm_en <= data_3[0];
+					2 : begin 
+						o_c_factor <= data_2;
+						o_v_factor <= data_3;
+						end
+					3 : begin
+						o_zynq_status <= data_2;
+						o_zynq_ver	<= data_3;
+						end
+					4 : begin
+						o_max_duty <= data_2;
+						o_max_phase <= data_3;
+						end
+					5 : begin
+						o_max_freq <= data_2;
+						o_min_freq <= data_3;
+						end
+					6 : begin
+						o_min_c <= data_2;
+						o_max_c <= data_3;
+						end
+					7 : begin
+						o_min_v <= data_2;
+						o_max_v <= data_3;
+						end
+					8 : begin
+						o_deadband <= data_2;
+						o_sw_freq <= data_3;
+						end
+				endcase
+			end
+		end
+
+		else
+		begin
+			o_pwm_en		<= slv_reg[0][2];
 			o_c_factor 		<= slv_reg[1];
 			o_v_factor 		<= slv_reg[2];
 			o_zynq_status 	<= slv_reg[3][15:0];
@@ -317,52 +563,95 @@ module AXI4_Lite_S01 #
 			o_sw_freq		<= slv_reg[20][31:16];
 		end
 
-		else
-		begin
-			o_sfp_m_en 			<= 0;
-			o_pwm_en			<= i_master_stream_data[(C_DATA_FRAME_BIT * 2) + (16 * 1) +: 1];
-
-			o_c_factor 			<= i_master_stream_data[(C_DATA_FRAME_BIT * 2) + (16 * 22) +: 32];
-			o_v_factor 			<= i_master_stream_data[(C_DATA_FRAME_BIT * 2) + (16 * 24) +: 32];
-			o_master_pi_param 	<= i_master_stream_data[(C_DATA_FRAME_BIT * 2) + (16 * 26) +: 32];
-			o_zynq_status 		<= i_master_stream_data[(C_DATA_FRAME_BIT * 2) + (16 * 2) +: 16];
-			o_zynq_ver			<= i_master_stream_data[(C_DATA_FRAME_BIT * 2) + (16 * 3) +: 16];
-			o_max_duty			<= i_master_stream_data[(C_DATA_FRAME_BIT * 2) + (16 * 4) +: 32];
-			o_max_phase			<= i_master_stream_data[(C_DATA_FRAME_BIT * 2) + (16 * 6) +: 32];
-			o_max_freq			<= i_master_stream_data[(C_DATA_FRAME_BIT * 2) + (16 * 8) +: 32];
-			o_min_freq			<= i_master_stream_data[(C_DATA_FRAME_BIT * 2) + (16 * 10) +: 32];
-			o_min_c				<= i_master_stream_data[(C_DATA_FRAME_BIT * 2) + (16 * 12) +: 32];
-			o_max_c				<= i_master_stream_data[(C_DATA_FRAME_BIT * 2) + (16 * 14) +: 32];
-			o_min_v				<= i_master_stream_data[(C_DATA_FRAME_BIT * 2) + (16 * 16) +: 32];
-			o_max_v				<= i_master_stream_data[(C_DATA_FRAME_BIT * 2) + (16 * 18) +: 32];
-			o_deadband			<= i_master_stream_data[(C_DATA_FRAME_BIT * 2) + (16 * 20) +: 16];
-			o_sw_freq			<= i_master_stream_data[(C_DATA_FRAME_BIT * 2) + (16 * 21) +: 16];
-		end
 	end
 
-	// SFP Send Data Stream
-	always @(posedge S_AXI_ACLK)
+	always @(posedge S_AXI_ACLK or negedge S_AXI_ARESETN)
 	begin
-		if (slv_reg[0][0])
-			o_master_stream_data <= {	i_slave_pi_param_1, slv_reg[63], slv_reg[62], slv_reg[61], slv_reg[60], slv_reg[59], slv_reg[58],
-										slv_reg[57], slv_reg[56], slv_reg[55], slv_reg[54], slv_reg[53], slv_reg[52], slv_reg[51],
+		if (!S_AXI_ARESETN)
+			o_master_pi_param <= 0;
 
-										i_slave_pi_param_2, slv_reg[50], slv_reg[49], slv_reg[48], slv_reg[47], slv_reg[46], slv_reg[45],
-										slv_reg[44], slv_reg[43], slv_reg[42], slv_reg[41], slv_reg[40], slv_reg[39], slv_reg[38],
-
-										i_slave_pi_param_3, slv_reg[37], slv_reg[36], slv_reg[35], slv_reg[34], slv_reg[33], slv_reg[32],
-										slv_reg[31], slv_reg[30], slv_reg[29], slv_reg[28], slv_reg[27], slv_reg[26], slv_reg[25]			};
+		else if (s_rx_state == S_RX_PASS)
+			if (cmd == 0)
+				o_master_pi_param <= i_master_stream_data[(32 * sfp_id) - 1 -: 32];
 
 		else
-			o_master_stream_data <= (i_master_stream_data << (C_DATA_FRAME_BIT * 2)) + 
-										{i_v_adc_data, i_c_adc_data, i_zynq_intl, i_dsp_ver, i_dsp_status, 16'b0000_0000_1111_1111};
+			o_master_pi_param <= o_master_pi_param;
+	end
+
+
+	always @(posedge S_AXI_ACLK or negedge S_AXI_ARESETN)
+	begin
+		if (!S_AXI_ARESETN)
+			slave_sfp_state_cnt <= 0;
+
+		else if (s_tx_state == S_TX_IDLE)
+			slave_sfp_state_cnt <= slave_sfp_state_cnt + 1;
+
+		else if (slave_sfp_state_cnt == 200)
+			slave_sfp_state_cnt <= 0;
+
+		else
+			slave_sfp_state_cnt <= slave_sfp_state_cnt;
+	end
+
+	// Output
+	always @(posedge S_AXI_ACLK or negedge S_AXI_ARESETN)
+	begin
+		sfp_id 			<= slv_reg[0][1:0];
+		zynq_sfp_en		<= slv_reg[0][3];
+	end
+
+	always @(posedge S_AXI_ACLK or negedge S_AXI_ARESETN)
+	begin
+		if (!S_AXI_ARESETN)
+			o_master_stream_data <= 0;
+
+		else if (m_tx_state == M_TX_ZYNQ_DATA_SET)
+			o_master_stream_data <= {slv_reg[63][8:0], slv_reg[62][8:0], slv_reg[61], slv_reg[60], slv_reg[59]};
+			
+		else if (m_tx_state == M_TX_DSP_DATA_SET)
+			o_master_stream_data <= {16'h0000_0000_0000_0000, 16'h0000_0000_0000_0000, i_slave_pi_param_3, i_slave_pi_param_2, i_slave_pi_param_1};
+
+		else if (s_tx_state == S_TX_STAT_DATA_SET)
+			o_master_stream_data <= {16'h0000_0000_0000_0000, sfp_id, slave_state, i_c_adc_data, i_v_adc_data};
+
+		else if (s_tx_state == S_TX_PASS_DATA_SET)
+			o_master_stream_data <= i_master_stream_data;
+
+		else
+			o_master_stream_data <= o_master_stream_data;
+	end
+
+	always @(posedge S_AXI_ACLK)
+	begin
+		if (m_rx_state == M_RX_RUN)
+		begin
+			if (slv_id == 1)
+			begin
+				slv_reg[119] <= data_1;
+				slv_reg[120] <= data_2;
+				slv_reg[121] <= data_3;
+			end
+
+			else if (slv_id == 2)
+			begin
+				slv_reg[122] <= data_1;
+				slv_reg[123] <= data_2;
+				slv_reg[124] <= data_3;
+			end
+
+			else if (slv_id == 3)
+			begin
+				slv_reg[125] <= data_1;
+				slv_reg[126] <= data_2;
+				slv_reg[127] <= data_3;
+			end
+		end
 	end
 
 	// Input
 	always @(posedge S_AXI_ACLK)
 	begin
-		slv_reg[64][0]		<= i_pwm_en;
-
 		slv_reg[65]			<= i_c_adc_data;
 		slv_reg[66]			<= i_v_adc_data;
 		slv_reg[67][15:0]	<= i_dsp_status;
@@ -370,30 +659,8 @@ module AXI4_Lite_S01 #
 		slv_reg[68]			<= i_wf_read_cnt;
 	end
 
-	// SFP Receive Data Stream
-	always @(posedge S_AXI_ACLK)
-	begin
-		if ((i_axi_data_valid) && (slv_reg[0][0]))
-		begin
-			// Slave 3
-			slv_reg[108]		<= i_master_stream_data[(32 * 1) -: 32];
-			slv_reg[109]		<= i_master_stream_data[(32 * 2) -: 32];
-			slv_reg[110]		<= i_master_stream_data[(32 * 3) -: 32];
-			slv_reg[111]		<= i_master_stream_data[(32 * 4) -: 32];
-
-			// Slave 2
-			slv_reg[116]		<= i_master_stream_data[(C_DATA_FRAME_BIT * 1) + (32 * 1) -: 32];
-			slv_reg[117]		<= i_master_stream_data[(C_DATA_FRAME_BIT * 1) + (32 * 2) -: 32];
-			slv_reg[118]		<= i_master_stream_data[(C_DATA_FRAME_BIT * 1) + (32 * 3) -: 32];
-			slv_reg[119]		<= i_master_stream_data[(C_DATA_FRAME_BIT * 1) + (32 * 4) -: 32];
-
-			// Slave 1
-			slv_reg[124]		<= i_master_stream_data[(C_DATA_FRAME_BIT * 2) + (32 * 1) -: 32];
-			slv_reg[125]		<= i_master_stream_data[(C_DATA_FRAME_BIT * 2) + (32 * 2) -: 32];
-			slv_reg[126]		<= i_master_stream_data[(C_DATA_FRAME_BIT * 2) + (32 * 3) -: 32];
-			slv_reg[127]		<= i_master_stream_data[(C_DATA_FRAME_BIT * 2) + (32 * 4) -: 32];
-		end
-	end
+	assign o_sfp_master = (sfp_id == 0);
+	assign o_sfp_start_flag = ((m_tx_state == M_TX_ZYNQ_EN) || (m_tx_state == M_TX_DSP_EN)) || (s_tx_state == S_TX_EN);
 
 	// User logic ends
 
@@ -408,5 +675,11 @@ module AXI4_Lite_S01 #
 
 	assign slv_reg_wren = axi_wready && S_AXI_WVALID && axi_awready && S_AXI_AWVALID;
 	assign slv_reg_rden = axi_arready & S_AXI_ARVALID & ~axi_rvalid;
+	
+	assign cmd = i_master_stream_data[127:112];
+	assign slv_id = i_master_stream_data[111:96];
+	assign data_1 = i_master_stream_data[95:64];
+	assign data_2 = i_master_stream_data[63:32];
+	assign data_3 = i_master_stream_data[31:0];
 
 endmodule
