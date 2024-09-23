@@ -307,19 +307,19 @@ module AXI4_Lite_S01 #
 	localparam M_RX_DONE = 2;
 
 	localparam S_TX_IDLE = 0;
-	localparam S_TX_STAT_DATA_SET = 0;
-	localparam S_TX_PASS_DATA_SET = 0;
-	localparam S_TX_EN = 0;
-	localparam S_TX_DONE = 0;
+	localparam S_TX_STAT_DATA_SET = 1;
+	localparam S_TX_PASS_DATA_SET = 2;
+	localparam S_TX_EN = 3;
+	localparam S_TX_DONE = 4;
 
 	localparam S_RX_IDLE = 0;
-	localparam S_RX_RUN = 0;
-	localparam S_RX_PASS = 0;
-	localparam S_RX_INSERT = 0;
-	localparam S_RX_DONE = 0;
+	localparam S_RX_RUN = 1;
+	localparam S_RX_PASS = 2;
+	localparam S_RX_INSERT = 3;
+	localparam S_RX_DONE = 4;
 
 	reg [2:0] m_tx_state;
-	reg [1:0] m_rx_state;
+	reg [2:0] m_rx_state;
 	reg [2:0] s_tx_state;
 	reg [2:0] s_rx_state;
 
@@ -333,6 +333,35 @@ module AXI4_Lite_S01 #
 	wire [31:0] data_2;
 	wire [31:0] data_3;
 
+	reg [7:0] m_tx_fsm_cnt;
+	reg [7:0] s_tx_fsm_cnt;
+
+	always @(posedge S_AXI_ACLK or negedge S_AXI_ARESETN)
+	begin
+		if (!S_AXI_ARESETN)
+			m_tx_fsm_cnt <= 0;
+
+		else if ((m_tx_state == M_TX_ZYNQ_DONE) || (m_tx_state == M_TX_DSP_DONE))
+			m_tx_fsm_cnt <= m_tx_fsm_cnt + 1;
+
+		else
+			m_tx_fsm_cnt <= 0;
+
+	end
+
+	always @(posedge S_AXI_ACLK or negedge S_AXI_ARESETN)
+	begin
+		if (!S_AXI_ARESETN)
+			s_tx_fsm_cnt <= 0;
+
+		else if (s_tx_state == S_TX_DONE)
+			s_tx_fsm_cnt <= s_tx_fsm_cnt + 1;
+
+		else
+			s_tx_fsm_cnt <= 0;
+
+	end
+
 	always @(posedge S_AXI_ACLK or negedge S_AXI_ARESETN)
 	begin
 		if (!S_AXI_ARESETN)
@@ -343,10 +372,10 @@ module AXI4_Lite_S01 #
 			case (m_tx_state)
 				M_TX_IDLE :
 				begin
-					if (zynq_sfp_en)
+					if (zynq_sfp_en && o_sfp_master)
 						m_tx_state <= M_TX_ZYNQ_DATA_SET;
 
-					else if (i_dsp_sfp_en)
+					else if (i_dsp_sfp_en && o_sfp_master)
 						m_tx_state <= M_TX_DSP_DATA_SET;
 
 					else
@@ -362,7 +391,7 @@ module AXI4_Lite_S01 #
 
 				M_TX_ZYNQ_DONE :
 				begin
-					if (i_tx_en)
+					if ((i_tx_en || (m_tx_fsm_cnt >= 20)) && !(zynq_sfp_en))
 						m_tx_state <= M_TX_IDLE;
 
 					else
@@ -379,7 +408,7 @@ module AXI4_Lite_S01 #
 
 				M_TX_DSP_DONE :
 				begin
-					if (i_tx_en)
+					if ((i_tx_en || (m_tx_fsm_cnt >= 20)) && !(zynq_sfp_en))
 							m_tx_state <= M_TX_IDLE;
 
 					else
@@ -399,7 +428,7 @@ module AXI4_Lite_S01 #
 			case (m_rx_state)
 				M_RX_IDLE :
 				begin
-					if (i_sfp_end_flag)
+					if (i_sfp_end_flag && (o_sfp_master))
 						m_rx_state <= M_RX_RUN;
 
 					else
@@ -425,10 +454,10 @@ module AXI4_Lite_S01 #
 			case (s_tx_state)
 				S_TX_IDLE :
 				begin
-					if (slave_sfp_state_cnt == 199)
+					if ((slave_sfp_state_cnt == 199) && !(o_sfp_master))
 						s_tx_state <= S_TX_STAT_DATA_SET;
 
-					else if (s_rx_state == S_RX_PASS)
+					else if ((s_rx_state == S_RX_PASS) && !(o_sfp_master))
 						s_tx_state <= S_TX_PASS_DATA_SET;
 
 					else
@@ -446,7 +475,7 @@ module AXI4_Lite_S01 #
 
 				S_TX_DONE :
 				begin
-					if (i_tx_en)
+					if (i_tx_en || (s_tx_fsm_cnt >= 20))
 						s_tx_state <= S_TX_IDLE;
 
 					else
@@ -466,7 +495,7 @@ module AXI4_Lite_S01 #
 			case (s_rx_state)
 				S_RX_IDLE :
 				begin
-					if (i_sfp_end_flag)
+					if (i_sfp_end_flag && !(o_sfp_master))
 						s_rx_state <= S_RX_RUN;
 
 					else
@@ -500,7 +529,7 @@ module AXI4_Lite_S01 #
 		end
 	end
 
-	always @(posedge S_AXI_ACLK or negedge S_AXI_ARESETN)
+	always @(posedge S_AXI_ACLK)
 	begin
 		if (sfp_id != 0)
 		begin
@@ -601,7 +630,7 @@ module AXI4_Lite_S01 #
 	end
 
 	// Output
-	always @(posedge S_AXI_ACLK or negedge S_AXI_ARESETN)
+	always @(posedge S_AXI_ACLK)
 	begin
 		sfp_id 			<= slv_reg[0][1:0];
 		zynq_sfp_en		<= slv_reg[0][3];
@@ -613,13 +642,13 @@ module AXI4_Lite_S01 #
 			o_master_stream_data <= 0;
 
 		else if (m_tx_state == M_TX_ZYNQ_DATA_SET)
-			o_master_stream_data <= {slv_reg[63][8:0], slv_reg[62][8:0], slv_reg[61], slv_reg[60], slv_reg[59]};
+			o_master_stream_data <= {slv_reg[63][15:0], slv_reg[62][15:0], slv_reg[61], slv_reg[60], slv_reg[59]};
 			
 		else if (m_tx_state == M_TX_DSP_DATA_SET)
 			o_master_stream_data <= {16'h0000_0000_0000_0000, 16'h0000_0000_0000_0000, i_slave_pi_param_3, i_slave_pi_param_2, i_slave_pi_param_1};
 
 		else if (s_tx_state == S_TX_STAT_DATA_SET)
-			o_master_stream_data <= {16'h0000_0000_0000_0000, sfp_id, slave_state, i_c_adc_data, i_v_adc_data};
+			o_master_stream_data <= {16'h0000_0000_0000_1111, sfp_id, slave_state, i_c_adc_data, i_v_adc_data};
 
 		else if (s_tx_state == S_TX_PASS_DATA_SET)
 			o_master_stream_data <= i_master_stream_data;
@@ -630,7 +659,7 @@ module AXI4_Lite_S01 #
 
 	always @(posedge S_AXI_ACLK)
 	begin
-		if (m_rx_state == M_RX_RUN)
+		if ((m_rx_state == M_RX_RUN) && (cmd == 16'h0000_0000_0000_1111))
 		begin
 			if (slv_id == 1)
 			begin
@@ -666,7 +695,7 @@ module AXI4_Lite_S01 #
 	end
 
 	assign o_sfp_master = (sfp_id == 0);
-	assign o_sfp_start_flag = ((m_tx_state == M_TX_ZYNQ_EN) || (m_tx_state == M_TX_DSP_EN)) || (s_tx_state == S_TX_EN);
+	assign o_sfp_start_flag = ((m_tx_state == M_TX_ZYNQ_EN) || (m_tx_state == M_TX_DSP_EN) || (s_tx_state == S_TX_EN));
 
 	// User logic ends
 

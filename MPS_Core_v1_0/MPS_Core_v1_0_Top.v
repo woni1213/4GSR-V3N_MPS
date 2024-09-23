@@ -143,7 +143,7 @@ module MPS_Core_v1_0_Top #
 
 		// System Control
 		.o_sfp_master(sfp_m_en),
-		.o_pwn_en(o_pwm_en),
+		.o_pwm_en(o_pwm_en),
 		.i_dsp_sfp_en(i_dsp_sfp_en),
 		.i_tx_en(i_tx_en),
 		.o_sfp_start_flag(o_aurora_tx_start_flag),
@@ -151,7 +151,7 @@ module MPS_Core_v1_0_Top #
 
 		// DPBRAM Write
         .o_zynq_status(zynq_status),
-		.o_zynq_firmware_ver(o_zynq_ver),
+		.o_zynq_ver(o_zynq_ver),
         .o_set_c(set_c),
         .o_set_v(set_v),
         .o_p_gain_c(p_gain_c),
@@ -173,7 +173,7 @@ module MPS_Core_v1_0_Top #
 
 		// DPBRAM Read
         .i_dsp_status(dsp_status),
-		.i_dsp_firmware_ver(i_dsp_ver),
+		.i_dsp_ver(i_dsp_ver),
 		.i_wf_read_cnt(wf_read_cnt),
 
 		// Waveform DPBRAM
@@ -185,7 +185,7 @@ module MPS_Core_v1_0_Top #
 		.i_slave_pi_param_2(slave_pi_param_2),
 		.i_slave_pi_param_3(slave_pi_param_3),
 		.o_master_stream_data(o_stream_data),				// SFP Master Mode Data to Slave
-		.i_msater_stream_data(i_stream_data),				// SFP Master Mode Data from Slave
+		.i_master_stream_data(i_stream_data),				// SFP Master Mode Data from Slave
 		.o_master_pi_param(master_pi_param),
 		.i_axi_data_valid(axi_data_valid),
 
