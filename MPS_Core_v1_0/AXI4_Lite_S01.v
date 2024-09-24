@@ -18,7 +18,6 @@ module AXI4_Lite_S01 #
 	input [31:0]		i_v_adc_data,
 
 	// SFP Control
-	output				o_sfp_master,
 	output reg			o_pwm_en,
 	input				i_dsp_sfp_en,
 	input				i_tx_en,
@@ -50,11 +49,6 @@ module AXI4_Lite_S01 #
 	// DPBRAM Read
 	input [15:0]		i_dsp_status,
 	input [15:0]		i_dsp_ver,
-    input [31:0]		i_wf_read_cnt,
-
-	// Waveform DPBRAM
-	output reg [9:0]	o_xintf_wf_ram_addr,
-	output reg [15:0]	o_xintf_wf_ram_din,
 
 	// SFP PI Parameter
 	input [31:0]		i_slave_pi_param_1,
@@ -100,8 +94,6 @@ module AXI4_Lite_S01 #
 	reg [1:0] axi_rresp;
 	reg axi_rvalid;
 
-	
-
 	localparam integer ADDR_LSB = 2;
 	localparam integer OPT_MEM_ADDR_BITS = $clog2(C_S_AXI_ADDR_NUM) - 1;
 
@@ -120,7 +112,7 @@ module AXI4_Lite_S01 #
 	genvar i;
 	integer j;
 
-	// Address Write Flag
+	// Address Write (AW) Flag
 	always @( posedge S_AXI_ACLK )
 	begin
 		if ( S_AXI_ARESETN == 1'b0 )
@@ -148,7 +140,7 @@ module AXI4_Lite_S01 #
 	    end 
 	end
 
-	// Address Write
+	// Address Write (AW)
 	always @( posedge S_AXI_ACLK )
 	begin
 		if ( S_AXI_ARESETN == 1'b0 )
@@ -162,7 +154,7 @@ module AXI4_Lite_S01 #
 
 	end
 
-	// Write Data Flag
+	// Write Data Flag (W)
 	always @( posedge S_AXI_ACLK )
 	begin
 		if ( S_AXI_ARESETN == 1'b0 )
@@ -201,7 +193,7 @@ module AXI4_Lite_S01 #
 	end
 	endgenerate
 
-	// Response Flag
+	// Response Flag (B)
 	always @( posedge S_AXI_ACLK )
 	begin
 		if ( S_AXI_ARESETN == 1'b0 )
@@ -226,7 +218,7 @@ module AXI4_Lite_S01 #
 		end
 	end
 
-	// Address Read Flag
+	// Address Read Flag (AR)
 	always @( posedge S_AXI_ACLK )
 	begin
 		if ( S_AXI_ARESETN == 1'b0 )
@@ -248,7 +240,7 @@ module AXI4_Lite_S01 #
 		end
 	end
 
-	// Read Data Flag
+	// Read Data Flag (R)
 	always @( posedge S_AXI_ACLK )
 	begin
 		if ( S_AXI_ARESETN == 1'b0 )
@@ -323,19 +315,21 @@ module AXI4_Lite_S01 #
 	reg [2:0] s_tx_state;
 	reg [2:0] s_rx_state;
 
-	reg zynq_sfp_en;
-	reg [15:0] sfp_id;
-	wire [31:0] slave_state;
-	reg [9:0] slave_sfp_state_cnt;
-	wire [15:0] cmd;
-	wire [15:0] slv_id;
+	wire sfp_master;				// SFP Master Mode Flag. sfp_id == 0이면 Master
+	reg zynq_sfp_en;				// PS용 SFP Start Flag
+	reg [15:0] sfp_id;				// Master 및 Slave 장비 번호 지정. 16비트는 Stream Data에 편하게 넣을려고 만듬
+	wire [31:0] slave_state;		// Slave State
+	reg [9:0] slave_sfp_state_cnt;	// Slave SFP Start Counter. 1us로 설정함
+	wire [15:0] cmd;				// Slave Command
+	wire [15:0] slv_id;				// Slave가 Master에 데이터 보내줄때 지정하는 Slave 장비 번호
 	wire [31:0] data_1;
 	wire [31:0] data_2;
 	wire [31:0] data_3;
 
-	reg [7:0] m_tx_fsm_cnt;
+	reg [7:0] m_tx_fsm_cnt;			// SFP TX 이후 무한루프 방지용 Counter. 100ns
 	reg [7:0] s_tx_fsm_cnt;
 
+	// Timeout Count
 	always @(posedge S_AXI_ACLK or negedge S_AXI_ARESETN)
 	begin
 		if (!S_AXI_ARESETN)
@@ -362,6 +356,7 @@ module AXI4_Lite_S01 #
 
 	end
 
+	// SFP Master TX
 	always @(posedge S_AXI_ACLK or negedge S_AXI_ARESETN)
 	begin
 		if (!S_AXI_ARESETN)
@@ -372,17 +367,17 @@ module AXI4_Lite_S01 #
 			case (m_tx_state)
 				M_TX_IDLE :
 				begin
-					if (zynq_sfp_en && o_sfp_master)
+					if (zynq_sfp_en && sfp_master)
 						m_tx_state <= M_TX_ZYNQ_DATA_SET;
 
-					else if (i_dsp_sfp_en && o_sfp_master)
+					else if (i_dsp_sfp_en && sfp_master)
 						m_tx_state <= M_TX_DSP_DATA_SET;
 
 					else
 						m_tx_state <= M_TX_IDLE;
 				end
 
-				// Zynq Cmd
+				// Zynq Procedure
 				M_TX_ZYNQ_DATA_SET :
 					m_tx_state <= M_TX_ZYNQ_EN;
 
@@ -399,7 +394,7 @@ module AXI4_Lite_S01 #
 				end
 
 
-				// DSP Cmd
+				// DSP Procedure
 				M_TX_DSP_DATA_SET :
 					m_tx_state <= M_TX_DSP_EN;
 
@@ -418,6 +413,7 @@ module AXI4_Lite_S01 #
 		end
 	end
 
+	// SFP Master RX
 	always @(posedge S_AXI_ACLK or negedge S_AXI_ARESETN)
 	begin
 		if (!S_AXI_ARESETN)
@@ -428,7 +424,7 @@ module AXI4_Lite_S01 #
 			case (m_rx_state)
 				M_RX_IDLE :
 				begin
-					if (i_sfp_end_flag && (o_sfp_master))
+					if (i_sfp_end_flag && (sfp_master))
 						m_rx_state <= M_RX_RUN;
 
 					else
@@ -444,6 +440,7 @@ module AXI4_Lite_S01 #
 		end
 	end
 
+	// SFP Slave TX
 	always @(posedge S_AXI_ACLK or negedge S_AXI_ARESETN)
 	begin
 		if (!S_AXI_ARESETN)
@@ -454,10 +451,10 @@ module AXI4_Lite_S01 #
 			case (s_tx_state)
 				S_TX_IDLE :
 				begin
-					if ((slave_sfp_state_cnt == 199) && !(o_sfp_master))
+					if ((slave_sfp_state_cnt == 199) && !sfp_master)
 						s_tx_state <= S_TX_STAT_DATA_SET;
 
-					else if ((s_rx_state == S_RX_PASS) && !(o_sfp_master))
+					else if ((s_rx_state == S_RX_PASS) && !sfp_master)	// !! S_RX_PASS 신호가 들어오면 동작함
 						s_tx_state <= S_TX_PASS_DATA_SET;
 
 					else
@@ -485,6 +482,7 @@ module AXI4_Lite_S01 #
 		end
 	end
 
+	// SFP Slave RX
 	always @(posedge S_AXI_ACLK or negedge S_AXI_ARESETN)
 	begin
 		if (!S_AXI_ARESETN)
@@ -495,7 +493,7 @@ module AXI4_Lite_S01 #
 			case (s_rx_state)
 				S_RX_IDLE :
 				begin
-					if (i_sfp_end_flag && !(o_sfp_master))
+					if (i_sfp_end_flag && !sfp_master)
 						s_rx_state <= S_RX_RUN;
 
 					else
@@ -511,16 +509,16 @@ module AXI4_Lite_S01 #
 						s_rx_state <= S_RX_INSERT;
 				end
 				
-				S_RX_PASS :
+				S_RX_PASS :								// Slave가 자신의 데이터가 아닐 시 다른 장비로 데이터 전달
 				begin
-					if (s_tx_state == S_TX_EN)
+					if (s_tx_state == S_TX_EN)			// !! S_TX_EN 신호가 들어오면 Clear
 						s_rx_state <= S_RX_DONE;
 
 					else
 						s_rx_state <= S_RX_PASS;
 				end
 
-				S_RX_INSERT :
+				S_RX_INSERT :							// Slave가 자신의 데이터일 경우 적용 
 					s_rx_state <= S_RX_DONE;
 
 				S_RX_DONE :
@@ -529,47 +527,62 @@ module AXI4_Lite_S01 #
 		end
 	end
 
+	// DSP Write DPBRAM
 	always @(posedge S_AXI_ACLK)
 	begin
-		if (sfp_id != 0)
+		if (sfp_id != 0)	// Slave Mode
 		begin
 			if (s_rx_state == S_RX_INSERT)
 			begin
 				case (cmd)
 					1 : o_pwm_en <= data_3[0];
-					2 : begin 
+
+					2 : 
+					begin 
 						o_c_factor <= data_2;
 						o_v_factor <= data_3;
-						end
-					3 : begin
+					end
+
+					3 : 
+					begin
 						o_zynq_status <= data_2;
 						o_zynq_ver	<= data_3;
-						end
-					4 : begin
+					end
+
+					4 : 
+					begin
 						o_max_duty <= data_2;
 						o_max_phase <= data_3;
-						end
-					5 : begin
+					end
+
+					5 : 
+					begin
 						o_max_freq <= data_2;
 						o_min_freq <= data_3;
-						end
-					6 : begin
+					end
+
+					6 : 
+					begin
 						o_min_c <= data_2;
 						o_max_c <= data_3;
-						end
-					7 : begin
+					end
+
+					7 : 
+					begin
 						o_min_v <= data_2;
 						o_max_v <= data_3;
-						end
-					8 : begin
+					end
+
+					8 : 
+					begin
 						o_deadband <= data_2;
 						o_sw_freq <= data_3;
-						end
+					end
 				endcase
 			end
 		end
 
-		else
+		else				// Master Mode
 		begin
 			o_pwm_en		<= slv_reg[0][2];
 			o_c_factor 		<= slv_reg[1];
@@ -594,12 +607,11 @@ module AXI4_Lite_S01 #
 			o_max_v			<= slv_reg[19];
 			o_deadband		<= slv_reg[20][15:0];
 			o_sw_freq		<= slv_reg[20][31:16];
-			o_xintf_wf_ram_addr <= slv_reg[21];
-			o_xintf_wf_ram_din <= slv_reg[22];
 		end
 
 	end
 
+	// Slave 용 PI Parameter RX. PASS 상태로 되지만 cmd가 0일 경우
 	always @(posedge S_AXI_ACLK or negedge S_AXI_ARESETN)
 	begin
 		if (!S_AXI_ARESETN)
@@ -613,7 +625,7 @@ module AXI4_Lite_S01 #
 			o_master_pi_param <= o_master_pi_param;
 	end
 
-
+	// Slave Status RX Counter
 	always @(posedge S_AXI_ACLK or negedge S_AXI_ARESETN)
 	begin
 		if (!S_AXI_ARESETN)
@@ -629,34 +641,36 @@ module AXI4_Lite_S01 #
 			slave_sfp_state_cnt <= slave_sfp_state_cnt;
 	end
 
-	// Output
+	// SFP Control
 	always @(posedge S_AXI_ACLK)
 	begin
 		sfp_id 			<= slv_reg[0][1:0];
 		zynq_sfp_en		<= slv_reg[0][3];
 	end
 
+	// SFP TX Data
 	always @(posedge S_AXI_ACLK or negedge S_AXI_ARESETN)
 	begin
 		if (!S_AXI_ARESETN)
 			o_master_stream_data <= 0;
 
-		else if (m_tx_state == M_TX_ZYNQ_DATA_SET)
+		else if (m_tx_state == M_TX_ZYNQ_DATA_SET)		// Master Send Data
 			o_master_stream_data <= {slv_reg[63][15:0], slv_reg[62][15:0], slv_reg[61], slv_reg[60], slv_reg[59]};
 			
-		else if (m_tx_state == M_TX_DSP_DATA_SET)
+		else if (m_tx_state == M_TX_DSP_DATA_SET)		// Master Send PI Parameter
 			o_master_stream_data <= {16'h0000_0000_0000_0000, 16'h0000_0000_0000_0000, i_slave_pi_param_3, i_slave_pi_param_2, i_slave_pi_param_1};
 
-		else if (s_tx_state == S_TX_STAT_DATA_SET)
+		else if (s_tx_state == S_TX_STAT_DATA_SET)		// Slave Send Status
 			o_master_stream_data <= {16'h0000_0000_0000_1111, sfp_id, slave_state, i_c_adc_data, i_v_adc_data};
 
-		else if (s_tx_state == S_TX_PASS_DATA_SET)
+		else if (s_tx_state == S_TX_PASS_DATA_SET)		// Slave Send Pass Data
 			o_master_stream_data <= i_master_stream_data;
 
 		else
 			o_master_stream_data <= o_master_stream_data;
 	end
 
+	// Master Received Slave Status Data
 	always @(posedge S_AXI_ACLK)
 	begin
 		if ((m_rx_state == M_RX_RUN) && (cmd == 16'h0000_0000_0000_1111))
@@ -684,17 +698,16 @@ module AXI4_Lite_S01 #
 		end
 	end
 
-	// Input
+	// Zynq, DSP Data
 	always @(posedge S_AXI_ACLK)
 	begin
 		slv_reg[65]			<= i_c_adc_data;
 		slv_reg[66]			<= i_v_adc_data;
 		slv_reg[67][15:0]	<= i_dsp_status;
 		slv_reg[67][31:16]	<= i_dsp_ver;
-		slv_reg[68]			<= i_wf_read_cnt;
 	end
 
-	assign o_sfp_master = (sfp_id == 0);
+	assign sfp_master = (sfp_id == 0);
 	assign o_sfp_start_flag = ((m_tx_state == M_TX_ZYNQ_EN) || (m_tx_state == M_TX_DSP_EN) || (s_tx_state == S_TX_EN));
 
 	// User logic ends
