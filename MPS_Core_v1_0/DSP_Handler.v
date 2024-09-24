@@ -1,7 +1,11 @@
+`timescale 1 ns / 1 ps
 /*
-1. DSP_XINTF
- - i_DSP_intr과 상관없이 FSM 동작
- - 계속 Read Write
+
+24.09.10 :	최초 생성
+
+24.09.24 :	TX의 FSM이 Master인 경우에만 실행되는 것을 삭제
+
+
 */
 
 module DSP_Handler
@@ -9,8 +13,7 @@ module DSP_Handler
     input i_clk,
     input i_rst,
 
-    input i_sfp_m_en,
-	input i_i_zynq_intl,
+	input i_zynq_intl,
 
     // DPBRAM WRITE
 	output reg [8:0] o_xintf_w_ram_addr,
@@ -55,10 +58,11 @@ module DSP_Handler
 );
 
     localparam IDLE = 0;
-    localparam WRITE = 1;
-	localparam R_SETUP = 2;
-    localparam READ = 3;
-    localparam DONE = 4;
+	localparam W_SETUP = 1;
+    localparam WRITE = 2;
+	localparam R_SETUP = 3;
+    localparam READ = 4;
+    localparam DONE = 5;
 
     reg [2:0] r_state;
     reg [2:0] w_state;
@@ -83,12 +87,15 @@ module DSP_Handler
         end
     end
 
+	// DPBRAM Write FSM
     always @(*)
     begin
         case (w_state)
             IDLE :
-                if (i_sfp_m_en)
-                    n_w_state = WRITE;
+                n_w_state = W_SETUP;
+
+			W_SETUP :
+				n_r_state = WRITE;
 
             WRITE :
             begin
@@ -104,26 +111,27 @@ module DSP_Handler
         endcase
     end
 
+	// DPBRAM Read FSM
     always @(*)
     begin
         case (r_state)
             IDLE :
-                n_r_state <= R_SETUP;
+                n_r_state = R_SETUP;
 
 			R_SETUP :
-				n_r_state <= READ;
+				n_r_state = READ;
 
             READ :
             begin
                 if (r_addr_pointer == 10)
-                    n_r_state <= DONE;
+                    n_r_state = DONE;
                 
                 else
-                    n_r_state <= READ;
+                    n_r_state = READ;
             end
 
             DONE :
-               n_r_state <= IDLE;
+               n_r_state = IDLE;
         endcase
     end
 
@@ -164,7 +172,7 @@ module DSP_Handler
             if (~i_rst)
 				o_xintf_w_ram_ce <= 0;
 
-			else if (w_state == WRITE)
+			else if ((r_state == W_SETUP) || (r_state == WRITE))
 				o_xintf_w_ram_ce <= 1;
 
 			else
@@ -200,7 +208,7 @@ module DSP_Handler
                 2  : begin o_xintf_w_ram_addr <= 2 ;		o_xintf_w_ram_din <= i_v_adc_data[15:0];		end
                 3  : begin o_xintf_w_ram_addr <= 3 ;		o_xintf_w_ram_din <= i_v_adc_data[31:16];		end
                 4  : begin o_xintf_w_ram_addr <= 4 ;		o_xintf_w_ram_din <= i_zynq_status;				end
-                5  : begin o_xintf_w_ram_addr <= 5 ;		o_xintf_w_ram_din <= i_i_zynq_intl;				end
+                5  : begin o_xintf_w_ram_addr <= 5 ;		o_xintf_w_ram_din <= i_zynq_intl;				end
                 6  : begin o_xintf_w_ram_addr <= 6 ;		o_xintf_w_ram_din <= i_zynq_firmware_ver;		end
                 7  : begin o_xintf_w_ram_addr <= 7 ;		o_xintf_w_ram_din <= i_set_c[15:0];				end
                 8  : begin o_xintf_w_ram_addr <= 8 ;		o_xintf_w_ram_din <= i_set_c[31:16];			end

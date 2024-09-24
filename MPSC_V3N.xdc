@@ -119,7 +119,7 @@ set_property -dict { PACKAGE_PIN AG8	IOSTANDARD LVCMOS18 } [get_ports o_adc_ext_
 ### DSP_v1_0
 # DSP Handshake
 set_property -dict { PACKAGE_PIN P7		IOSTANDARD LVCMOS18 } [get_ports i_DSP_intr];		# MXTMP1  DSP : GPIO34
-set_property -dict { PACKAGE_PIN P6		IOSTANDARD LVCMOS18 } [get_ports i_valid];			# MXTMP2  DSP : GPIO35
+set_property -dict { PACKAGE_PIN P6		IOSTANDARD LVCMOS18 } [get_ports i_dsp_sfp_en];		# MXTMP2  DSP : GPIO35
 set_property -dict { PACKAGE_PIN AE3	IOSTANDARD LVCMOS18 } [get_ports i_DSP_fail];		# MXTMP3  DSP : GPIO26
 set_property -dict { PACKAGE_PIN AF3	IOSTANDARD LVCMOS18 } [get_ports i_DSP_nENPWM];		# MXTMP4  DSP : GPIO27
 
