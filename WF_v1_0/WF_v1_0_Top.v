@@ -10,10 +10,9 @@ module WF_v1_0_Top #
 	parameter integer C_S_AXI_ADDR_WIDTH = $clog2(C_S_AXI_ADDR_NUM) + 2
 )
 (
-	input i_dsp_wf_start,							// DSP WF Start	MMTXP1	DMTXP1(GPIO32)
-	output reg o_dsp_wf_mode,						// DSP WF Mode	MXTMP1	DXTMP1(GPIO34)
-
 	input i_wf_read_cnt,							// Core IP
+	
+	output o_dsp_wf_mode,							// WF Mode MMTXP1 DMTXP1(GPIO32)
 
 	(* X_INTERFACE_INFO = "HMT:JKW:s_dpbram_port:1.0 M_XINTF_WF_DPBRAM addr0" *) output [9:0] o_xintf_wf_ram_addr,
     (* X_INTERFACE_INFO = "HMT:JKW:s_dpbram_port:1.0 M_XINTF_WF_DPBRAM ce0" *) output o_xintf_wf_ram_ce,
@@ -45,6 +44,7 @@ module WF_v1_0_Top #
     input wire  s00_axi_rready
 );
 
+	wire wf_mode_start;
 	wire wf_write_en;
 	wire [9:0] wf_write_addr;
 	wire [15:0] wf_write_data;
@@ -59,6 +59,7 @@ module WF_v1_0_Top #
 	u_AXI4_Lite_S04
 	(
 		// DPBRAM Write
+		.o_wf_mode_start(wf_mode_start),						
 		.o_wf_write_en(wf_write_en),						
 		.o_wf_write_addr(wf_write_addr),
 		.o_wf_write_data(wf_write_data),
@@ -95,7 +96,7 @@ module WF_v1_0_Top #
 		.i_clk(s00_axi_aclk),
         .i_rst(s00_axi_aresetn),
 
-		.i_dsp_wf_start(i_dsp_wf_start),
+		.i_wf_start(wf_mode_start),
 		.o_dsp_wf_mode(o_dsp_wf_mode),
 
 		.i_wf_read_cnt(i_wf_read_cnt),

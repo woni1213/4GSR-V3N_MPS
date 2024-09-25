@@ -3,7 +3,7 @@ module WF
 	input i_clk,
 	input i_rst,
 
-	input i_dsp_wf_start,
+	input i_wf_start,
 	output reg o_dsp_wf_mode,
 
 	input [31:0] i_wf_read_cnt,
@@ -137,7 +137,7 @@ module WF
 		case (dsp_state)
 			DSP_IDLE :
 			begin
-				if (i_dsp_wf_start)
+				if (i_wf_start)
 				begin
 					n_dsp_state <= DSP_RUN;
 					o_dsp_wf_mode <= 1;
@@ -149,7 +149,7 @@ module WF
 
 			DSP_RUN :
 			begin
-				if (o_wf_read_data_num == (i_wf_read_cnt - 1))
+				if (o_wf_read_data_num == i_wf_read_cnt)
 				begin
 					n_dsp_state <= DSP_DONE;
 					o_dsp_wf_mode <= 0;
@@ -158,7 +158,7 @@ module WF
 
 			DSP_DONE :
 			begin
-				if (!i_dsp_wf_start)
+				if (!i_wf_start)
 					n_dsp_state <= DSP_IDLE;
 
 				else

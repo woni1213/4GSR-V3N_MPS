@@ -8,6 +8,7 @@ module AXI4_Lite_S04 #
 )
 (
 	// DPBRAM Write
+	output reg o_wf_mode_start,
 	output reg o_wf_write_en,
 	output reg [9:0] o_wf_write_addr,
 	output reg [15:0] o_wf_write_data,
@@ -248,9 +249,10 @@ module AXI4_Lite_S04 #
 	// Output
 	always @(posedge S_AXI_ACLK)
 	begin
-		o_wf_write_en		<= slv_reg[0];			// PS에서 Waveform data를 줄 때 1로 설정해야 함
-		o_wf_write_addr		<= slv_reg[1];
-		o_wf_write_data		<= slv_reg[2];
+		o_wf_mode_start		<= slv_reg[0];			// PS에서 Waveform Mode를 시작하려면 1로 설정해야 함
+		o_wf_write_en		<= slv_reg[1];			// PS에서 Waveform data를 줄 때 1로 설정해야 함
+		o_wf_write_addr		<= slv_reg[2];
+		o_wf_write_data		<= slv_reg[3];
 	end
 
 endmodule
