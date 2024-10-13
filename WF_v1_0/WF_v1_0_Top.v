@@ -10,7 +10,7 @@ module WF_v1_0_Top #
 	parameter integer C_S_AXI_ADDR_WIDTH = $clog2(C_S_AXI_ADDR_NUM) + 2
 )
 (
-	input i_wf_read_cnt,							// Core IP
+	input [31:0] i_wf_read_cnt,						// Core IP
 	
 	output o_dsp_wf_mode,							// WF Mode MMTXP1 DMTXP1(GPIO32)
 

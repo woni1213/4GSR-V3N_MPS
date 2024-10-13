@@ -1,3 +1,5 @@
+`timescale 1 ns / 1 ps
+
 module WF
 (
 	input i_clk,

@@ -95,7 +95,7 @@ module DSP_Handler
                 n_w_state = W_SETUP;
 
 			W_SETUP :
-				n_r_state = WRITE;
+				n_w_state = WRITE;
 
             WRITE :
             begin
@@ -172,7 +172,7 @@ module DSP_Handler
             if (~i_rst)
 				o_xintf_w_ram_ce <= 0;
 
-			else if ((r_state == W_SETUP) || (r_state == WRITE))
+			else if ((w_state == W_SETUP) || (w_state == WRITE))
 				o_xintf_w_ram_ce <= 1;
 
 			else
