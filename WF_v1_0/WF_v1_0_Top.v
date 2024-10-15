@@ -49,6 +49,7 @@ module WF_v1_0_Top #
 	wire [9:0] wf_write_addr;
 	wire [15:0] wf_write_data;
 	wire [31:0] wf_read_data_num;
+	wire [31:0] wf_max_cnt;
 
 	AXI4_Lite_S04 #
 	(
@@ -63,9 +64,10 @@ module WF_v1_0_Top #
 		.o_wf_write_en(wf_write_en),						
 		.o_wf_write_addr(wf_write_addr),
 		.o_wf_write_data(wf_write_data),
+		.o_wf_max_cnt(wf_max_cnt),
 
 		// DPRAM Read
-		.i_wf_read_data_num(wf_read_data_num),
+		.i_wf_read_cnt(i_wf_read_cnt),
 
 		.S_AXI_ACLK(s00_axi_aclk),
 		.S_AXI_ARESETN(s00_axi_aresetn),
@@ -99,6 +101,7 @@ module WF_v1_0_Top #
 		.i_wf_start(wf_mode_start),
 		.o_dsp_wf_mode(o_dsp_wf_mode),
 
+		.i_wf_max_cnt(wf_max_cnt),
 		.i_wf_read_cnt(i_wf_read_cnt),
 
 		.i_wf_write_en(wf_write_en),
@@ -109,9 +112,7 @@ module WF_v1_0_Top #
 		.o_xintf_wf_ram_ce(o_xintf_wf_ram_ce),
 
 		.i_wf_write_addr(wf_write_addr),
-		.i_wf_write_data(wf_write_data),
-
-		.o_wf_read_data_num(wf_read_data_num)
+		.i_wf_write_data(wf_write_data)
     );
 
 	assign o_xintf_wf_ram_we = 1;

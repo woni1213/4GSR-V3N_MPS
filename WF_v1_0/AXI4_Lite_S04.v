@@ -12,9 +12,10 @@ module AXI4_Lite_S04 #
 	output reg o_wf_write_en,
 	output reg [9:0] o_wf_write_addr,
 	output reg [15:0] o_wf_write_data,
+	output reg [31:0] o_wf_read_cnt,
 
 	// DPBRAM Read
-	input [31:0] i_wf_read_data_num,
+	input [31:0] i_wf_read_cnt,
 
 	input S_AXI_ACLK,
 	input S_AXI_ARESETN,
@@ -55,7 +56,7 @@ module AXI4_Lite_S04 #
 
 	// slv_reg IO Type Select. 0 : Input, 1 : Output
 	// slv_reg Start to LSB
-	localparam [C_S_AXI_ADDR_NUM - 1 : 0] io_sel = 1111;	// 0 : Input, 1 : Output
+	localparam [C_S_AXI_ADDR_NUM - 1 : 0] io_sel = 11111;	// 0 : Input, 1 : Output
 
 	reg [C_S_AXI_DATA_WIDTH - 1 : 0] slv_reg[C_S_AXI_ADDR_NUM - 1 : 0];
 
@@ -243,7 +244,7 @@ module AXI4_Lite_S04 #
 	// Input
 	always @(posedge S_AXI_ACLK)
 	begin
-		slv_reg[4]			<= i_wf_read_data_num;
+		slv_reg[5]			<= i_wf_read_cnt;
 	end
 
 	// Output
@@ -253,6 +254,7 @@ module AXI4_Lite_S04 #
 		o_wf_write_en		<= slv_reg[1];			// PS에서 Waveform data를 줄 때 1로 설정해야 함
 		o_wf_write_addr		<= slv_reg[2];
 		o_wf_write_data		<= slv_reg[3];
+		o_wf_read_cnt		<= slv_reg[4];
 	end
 
 endmodule

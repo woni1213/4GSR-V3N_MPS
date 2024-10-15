@@ -8,6 +8,7 @@ module WF
 	input i_wf_start,
 	output reg o_dsp_wf_mode,
 
+	input [31:0] i_wf_max_cnt,
 	input [31:0] i_wf_read_cnt,
 
 	input i_wf_write_en,
@@ -18,9 +19,7 @@ module WF
 	output reg o_xintf_wf_ram_ce,
 
 	input [9:0] i_wf_write_addr,
-	input [15:0] i_wf_write_data,
-
-	output reg [31:0] o_wf_read_data_num
+	input [15:0] i_wf_write_data
 );
 	parameter W_IDLE = 0;
 	parameter W_SETUP = 1;
@@ -121,18 +120,6 @@ module WF
 			dsp_state <= n_dsp_state;
 	end
 
-	always @(posedge i_clk or negedge i_rst)
-	begin
-		if (~i_rst)
-			o_wf_read_data_num <= 0;
-
-		else if (dsp_state == DSP_RUN)
-			o_wf_read_data_num <= o_wf_read_data_num + 1;
-
-		else
-			o_wf_read_data_num <= 0;
-	end
-
 	// FSM
 	always @(*)
 	begin
@@ -151,7 +138,7 @@ module WF
 
 			DSP_RUN :
 			begin
-				if (o_wf_read_data_num == i_wf_read_cnt)
+				if (i_wf_read_cnt == i_wf_max_cnt)
 				begin
 					n_dsp_state <= DSP_DONE;
 					o_dsp_wf_mode <= 0;
